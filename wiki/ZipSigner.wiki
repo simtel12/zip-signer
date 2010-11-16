@@ -13,4 +13,4 @@ The "Choose..." and "Save As..." buttons will work only if [http://www.estrongs.
 
 ==Zip Signer Activity==
 
-This activity signs the files specified in the Intent extras.  This activity can be called by any other app to sign files.  See the source code for the Zip Picker Activity for more details/example.
+This activity signs the files specified in the Intent extras.  This activity can be called by any other app to sign files.  See the source code of the Zip Picker for an example.
