@@ -5,12 +5,12 @@
 App for signing Zip, Apk, and/or Jar files onboard Android devices.
 
 
-==ZipPickerActivity==
+==Zip Picker Activity==
 
-This is the activity launched by default.  From this screen you can enter the input and output files.  When you click "Sign File" the ZipSignerActivity is launched.
+This is the activity launched by default.  From this screen you can enter the input and output files.  When you click "Sign File" the Zip Signer Activity is launched.
 
-The "Choose..." and "Save As..." buttons will work only if [http://www.estrongs.com/products/file-explorer.html ES File Explorer] is installed.
+The "Choose..." and "Save As..." buttons will work only if [http://www.estrongs.com/products/file-explorer.html ES File Explorer] is installed.  These buttons allow ES File Explorer to be used to fill in the input and output file parameters by selecting a file using the explorer.
 
-==ZipSignerActivity==
+==Zip Signer Activity==
 
-This activity signs the files specified in the Intent extras.
+This activity signs the files specified in the Intent extras.  This activity can be called by any other app to sign files.  See the source code for the Zip Picker Activity for more details/example.
