@@ -11,5 +11,5 @@ This project is divided into five subprojects.
   * android-sun-jarsign-support - provides supporting APIs for signing files.  This is modified Sun code licensed under GPL v2.
   * kellinwood-logging-lib - a lightweight, platform-independent logging framework
   * kellinwood-logging-android - android adapter for the above logging framework
-  * zipsigner-lib - a file signing library
+  * zipsigner-lib - a file signing library.  As java code it should work anywhere, but its targeted at Android application developers.
   * ZipSigner - an Android app that signs files onboard the device.
