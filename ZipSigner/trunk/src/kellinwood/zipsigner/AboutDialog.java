@@ -1,0 +1,83 @@
+package kellinwood.zipsigner;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import android.app.Dialog;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.text.SpannableString;
+import android.text.util.Linkify;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class AboutDialog 
+{
+	private static final String TAG = "AboutDialog";
+	
+	private static Dialog dialog = null;
+	
+	// Show the about dialog
+    public static void show(Context context) {
+    	String versionName;
+    	try {
+    		PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+    		versionName = pInfo.versionName;
+    	}
+    	catch (NameNotFoundException x) {
+    		Log.e(TAG, x.getClass().getName() + ": " + x.getMessage());
+    		versionName = "ERROR: " + x.getMessage();
+    	}
+    	
+    	dialog = new Dialog(context);
+    	dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+    	/*
+    	if (dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON)) {
+    		dialog.setFeatureDrawable(Window.FEATURE_LEFT_ICON, this.getResources().getDrawable(R.drawable.icon));
+    	}
+    	*/
+    	dialog.setContentView(R.layout.about_dialog);
+    	// dialog.setTitle(R.string.start_timer_about_title);
+    	String versionTemplate = context.getString(R.string.AboutZipSignerVersionTemplate);
+    	String versionText = String.format( versionTemplate, versionName);
+    	TextView versionView = (TextView)dialog.findViewById( R.id.about_version_view);
+    	versionView.setText(versionText);
+    	
+//    	TextView doclinkView = (TextView)dialog.findViewById( R.id.about_doclink_view);
+//    	SpannableString ss = new SpannableString(doclinkView.getText());
+//    	doclinkView.setText(ss);
+//    	
+//    	String linkifyPattern = context.getString(R.string.AboutZipSignerDocUrlPattern);
+//    	String targetURL = context.getString(R.string.AboutZipSignerDocUrl);
+//    	
+//    	Linkify.addLinks(doclinkView, Pattern.compile( linkifyPattern), targetURL, null, new Linkify.TransformFilter() {
+//			@Override
+//			public String transformUrl(Matcher arg0, String arg1) {
+//				return "documentation";
+//			}
+//		});
+    	
+    	
+    	Button closeButton = (Button)dialog.findViewById(R.id.AboutCloseButton);
+    	closeButton.setOnClickListener( new OnClickListener() {
+			@Override
+			public void onClick(View arg0) {
+				dialog.dismiss();
+			}
+    	});
+    	dialog.show();    	
+    }
+    
+    public static void hide() {
+    	if (dialog != null) {
+    		dialog.dismiss();
+    		dialog = null;
+    	}
+    }
+}
