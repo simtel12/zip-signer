@@ -17,3 +17,17 @@ This project is divided into five sub-projects.
 There are details README files in several of the projects
   * [http://code.google.com/p/zip-signer/source/browse/zipsigner-lib/trunk/README.txt zipsigner-lib README file]
   * [http://code.google.com/p/zip-signer/source/browse/ZipSigner/trunk/README.txt ZipSigner app README file]
+
+Check the "Downloads" tab for the latest release binaries and source code.
+
+== Subversion Checkouts ==
+
+There are currently five sub-projects.  Check them out the source from Subversion using the following commands.
+
+{{{
+svn co https://zip-signer.googlecode.com/svn/zipsigner-lib/trunk zipsigner-lib
+svn co https://zip-signer.googlecode.com/svn/ZipSigner/trunk ZipSigner
+svn co https://zip-signer.googlecode.com/svn/android-sun-jarsign-support/trunk android-sun-jarsign-support
+svn co https://zip-signer.googlecode.com/svn/kellinwood-logging-lib/trunk kellinwood-logging-lib
+svn co https://zip-signer.googlecode.com/svn/kellinwood-logging-android/trunk kellinwood-logging-android
+}}}
