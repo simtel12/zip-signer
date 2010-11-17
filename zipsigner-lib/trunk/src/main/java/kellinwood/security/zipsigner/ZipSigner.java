@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-/* This file is a modified version of com.android.signapk.SignApk.java.
- * The primary changes include addition of the signZip() methods and 
- * removal of main().
- * */
+/* This file is a modified version of
+ * com.android.signapk.SignApk.java.  The primary changes include
+ * addition of the signZip() convinience methods, addition of a
+ * progress listener interface, removal of main(), and the updates to
+ * generate a signature that is verifiable by the Android recovery
+ * programs. */
 
 package kellinwood.security.zipsigner;
 
