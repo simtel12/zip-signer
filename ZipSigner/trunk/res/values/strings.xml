@@ -10,7 +10,7 @@
 	<string name="SaveAsPickButtonLabel">Save As...</string>
 	<string name="FileManagerSaveButtonLabel">Save As</string>
 	
-	<string name="ESNoFileManagerInstalled">No ES File Explorer installed.</string>
+	<string name="ESNoFileManagerInstalled">ES File Explorer is not installed.</string>
 	
 	<string name="SignButtonLabel">Sign The File</string>
 	
@@ -22,7 +22,7 @@
 	<string name="AboutZipSignerCopyright">Copyright 2010.  All rights reserved.</string>
 	<string name="AboutZipSignerDocumentation">Visit the webpage</string>
 	<string name="AboutZipSignerDocUrlPattern">webpage</string>
-	<string name="AboutZipSignerDocUrl">http://sites.google.com/site/starttimer2/</string>
+	<string name="AboutZipSignerDocUrl">http://code.google.com/p/zip-signer/wiki/ZipSigner</string>
 		
 	<string name="CloseButtonLabel">Close</string>
 	<string name="CancelButtonLabel">Cancel</string>
