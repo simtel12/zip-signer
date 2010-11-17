@@ -34,12 +34,12 @@
         <dependency>
             <groupId>kellinwood.android</groupId>
             <artifactId>kellinwood-logging-lib</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>kellinwood.android</groupId>
             <artifactId>android-sun-jarsign-support</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
