@@ -17,7 +17,6 @@ package kellinwood.zipsigner;
 
 import java.net.URL;
 import java.security.PrivateKey;
-
 import java.security.cert.X509Certificate;
 
 import kellinwood.zipsigner.R;
