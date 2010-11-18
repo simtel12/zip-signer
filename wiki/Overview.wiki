@@ -1,33 +1,3 @@
 #summary Project overview
 
-= Introduction =
-
-API and app for signing Zip, Apk, and/or Jar files onboard Android devices.
-
-
-= Details =
-
-This project is divided into five sub-projects.
-  * zipsigner-lib - a file signing library with a simple API and built-in default certificate.  As Java code it should work anywhere, but its specifically targeted at Android application developers. Licensed under Apache 2.0.
-  * android-sun-jarsign-support - provides support for generating the PKCS#7 signature block file.  This is modified Sun code obtained from the OpenJDK project and is licensed under GPL v2.  Including this library in your project is optional since zipsigner-lib has a way to create the signature block with far less code.  In most cases it isn't needed. Please see the zipsigner-lib README file for more details.
-  * ZipSigner - an Android app that integrates zipsigner-lib and signs files onboard the device. Licensed under Apache 2.0.
-  * kellinwood-logging-lib - a lightweight, platform-independent logging framework.  Licensed under Apache 2.0.
-  * kellinwood-logging-android - android adapter for the above logging framework. Licensed under Apache 2.0.
-
-There are details README files in several of the projects
-  * [http://code.google.com/p/zip-signer/source/browse/zipsigner-lib/trunk/README.txt zipsigner-lib README file]
-  * [http://code.google.com/p/zip-signer/source/browse/ZipSigner/trunk/README.txt ZipSigner app README file]
-
-Check the "Downloads" tab for the latest release binaries and source code.
-
-== Subversion Checkouts ==
-
-There are currently five sub-projects.  Check them out the source from Subversion using the following commands.
-
-{{{
-svn co https://zip-signer.googlecode.com/svn/zipsigner-lib/trunk zipsigner-lib
-svn co https://zip-signer.googlecode.com/svn/ZipSigner/trunk ZipSigner
-svn co https://zip-signer.googlecode.com/svn/android-sun-jarsign-support/trunk android-sun-jarsign-support
-svn co https://zip-signer.googlecode.com/svn/kellinwood-logging-lib/trunk kellinwood-logging-lib
-svn co https://zip-signer.googlecode.com/svn/kellinwood-logging-android/trunk kellinwood-logging-android
-}}}
+Moved to the [http://code.google.com/p/zip-signer project homepage].
