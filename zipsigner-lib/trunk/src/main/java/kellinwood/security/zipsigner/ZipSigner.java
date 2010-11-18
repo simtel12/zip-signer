@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-/* This file is a modified version of
- * com.android.signapk.SignApk.java.  The primary changes include
- * addition of the signZip() convinience methods, addition of a
- * progress listener interface, removal of main(), and the updates to
- * generate a signature that is verifiable by the Android recovery
- * programs. */
+/* This file is a heavily modified version of com.android.signapk.SignApk.java.
+ * The changes include:
+ *   - addition of the signZip() convinience methods
+ *   - addition of a progress listener interface
+ *   - removal of main()
+ *   - switch to a signature generation method that verifies
+ *     in Android recovery
+ *   - eliminated dependency on sun.security and sun.misc APIs by 
+ *     using signature block template files.
+ */
 
 package kellinwood.security.zipsigner;
-
-import sun.misc.BASE64Encoder;
-import sun.misc.HexDumpEncoder;
-import sun.security.pkcs.ContentInfo;
-import sun.security.pkcs.PKCS7;
-import sun.security.pkcs.SignerInfo;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.X500Name;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -39,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.net.URL;
 import java.security.cert.Certificate;
@@ -76,13 +73,15 @@ import javax.security.auth.x500.X500Principal;
 import kellinwood.logging.LoggerInterface;
 import kellinwood.logging.LoggerManager;
 
-import sys.util.jar.Attributes;
-import sys.util.jar.Manifest;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 /**
  * This is a modified copy of com.android.signapk.SignApk.java.  It provides an
  * API to sign JAR files (including APKs and Zip/OTA updates) in
  * a way compatible with the mincrypt verifier, using SHA1 and RSA keys.
+ *
+ * Please see the README.txt file in the root of this project for usage instructions.
  */
 @SuppressWarnings("restriction")
 public class ZipSigner 
@@ -169,22 +168,35 @@ public class ZipSigner
         }
     }
 
+    /** Fetch the content at the specified URL and return it as a byte array. */
+    public byte[] readContentAsBytes( URL contentUrl) throws IOException
+    {
+        return readContentAsBytes( contentUrl.openStream());
+    }
+
+    /** Fetch the content from the given stream and return it as a byte array. */
+    public byte[] readContentAsBytes( InputStream input) throws IOException
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        byte[] buffer = new byte[2048];
+        
+        int numRead = input.read( buffer);
+        while (numRead != -1) {
+            baos.write( buffer, 0, numRead);
+            numRead = input.read( buffer);
+        }
+        
+        byte[] bytes = baos.toByteArray();
+        return bytes;
+    }
+    
     /** Read a PKCS 8 format private key. */
     public PrivateKey readPrivateKey(URL privateKeyUrl, String keyPassword)
             throws IOException, GeneralSecurityException {
         DataInputStream input = new DataInputStream( privateKeyUrl.openStream());
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            byte[] buffer = new byte[2048];
-
-            int numRead = input.read( buffer);
-            while (numRead != -1) {
-                baos.write( buffer, 0, numRead);
-                numRead = input.read( buffer);
-            }
-                
-            byte[] bytes = baos.toByteArray();
+            byte[] bytes = readContentAsBytes( input);
 
             KeySpec spec = decryptPrivateKey(bytes, keyPassword);
             if (spec == null) {
@@ -214,7 +226,7 @@ public class ZipSigner
             main.putValue("Created-By", "1.0 (Android SignApk)");
         }
 
-        BASE64Encoder base64 = new BASE64Encoder();
+        // BASE64Encoder base64 = new BASE64Encoder();
         MessageDigest md = MessageDigest.getInstance("SHA1");
         byte[] buffer = new byte[4096];
         int num;
@@ -250,7 +262,7 @@ public class ZipSigner
                 	if (inAttr != null) attr = new Attributes( inAttr);
                 }
                 if (attr == null) attr = new Attributes();
-                attr.putValue("SHA1-Digest", base64.encode(md.digest()));
+                attr.putValue("SHA1-Digest", Base64.encode(md.digest()));
                 output.getEntries().put(name, attr);
             }
         }
@@ -266,7 +278,7 @@ public class ZipSigner
         out.write( ("Created-By: 1.0 (Android SignApk)\r\n").getBytes());
 
 
-        BASE64Encoder base64 = new BASE64Encoder();
+        // BASE64Encoder base64 = new BASE64Encoder();
         MessageDigest md = MessageDigest.getInstance("SHA1");
         PrintStream print = new PrintStream(
                 new DigestOutputStream(new ByteArrayOutputStream(), md),
@@ -276,7 +288,7 @@ public class ZipSigner
         manifest.write(print);
         print.flush();
 
-        out.write( ("SHA1-Digest-Manifest: "+ base64.encode(md.digest()) + "\r\n\r\n").getBytes());
+        out.write( ("SHA1-Digest-Manifest: "+ Base64.encode(md.digest()) + "\r\n\r\n").getBytes());
 
         Map<String, Attributes> entries = manifest.getEntries();
         for (Map.Entry<String, Attributes> entry : entries.entrySet()) {
@@ -291,40 +303,37 @@ public class ZipSigner
             print.flush();
 
             out.write( nameEntry.getBytes());
-            out.write( ("SHA1-Digest: " +  base64.encode(md.digest()) + "\r\n\r\n").getBytes());
+            out.write( ("SHA1-Digest: " +  Base64.encode(md.digest()) + "\r\n\r\n").getBytes());
         }
 
     }
 
     /** Write a .RSA file with a digital signature. */
-    private void writeSignatureBlock(
+    private void writeSignatureBlock( byte[] signatureBlockTemplate,
             byte[] signatureBytes, X509Certificate publicKey, OutputStream out)
-            throws IOException, GeneralSecurityException 
+        throws IOException, GeneralSecurityException
     {
-    	X500Principal x500Principal = publicKey.getIssuerX500Principal();
-    	String x500PrincipalName = x500Principal.getName();
-    	X500Name x500Name = null;
-    	x500Name = new X500Name( x500PrincipalName);
-    	
-    	BigInteger serialNumber = publicKey.getSerialNumber();
-    	
-    	AlgorithmId SHA1_Id = AlgorithmId.get("SHA1");
-    	AlgorithmId RSA_Id = AlgorithmId.get("RSA");
-    	
-        SignerInfo signerInfo = new SignerInfo(
-                x500Name,
-                serialNumber,
-                SHA1_Id,
-                RSA_Id,
-                signatureBytes);
-
-        PKCS7 pkcs7 = new PKCS7(
-                new AlgorithmId[] { AlgorithmId.get("SHA1") },
-                new ContentInfo(ContentInfo.DATA_OID, null),
-                new X509Certificate[] { publicKey },
-                new SignerInfo[] { signerInfo });
-
-        pkcs7.encodeSignedData(out);
+        if (signatureBlockTemplate != null) {
+            out.write( signatureBlockTemplate);
+            out.write( signatureBytes);
+        }
+        else {
+            try {
+                // Using reflection to invoke the signature block writer in android-sun-jarsign-support.jar
+                // Inclusion of this jar is only necessary if the signatureBlockTemplate does not exist.
+                Class sigWriterClass = Class.forName( "kellinwood.sigblock.SignatureBlockWriter");
+                Method sigWriterMethod =
+                    sigWriterClass.getMethod( "writeSignatureBlock", (new byte[1]).getClass(),
+                                              X509Certificate.class, OutputStream.class);
+                if (sigWriterMethod == null) throw new IllegalStateException("writeSignatureBlock() method not found.");
+                sigWriterMethod.invoke( null, signatureBytes, publicKey, out);
+            }
+            catch (Exception x) {
+                getLogger().error( x.getMessage(), x);
+                throw new IllegalStateException("Failed to invoke writeSignatureBlock(): " +
+                                                x.getClass().getName() + ": " + x.getMessage());
+            }
+        }
     }
 
     /**
@@ -376,7 +385,8 @@ public class ZipSigner
     			   				String certPw, 
     			   				String inputZipFilename, 
     			   				String outputZipFilename)
-    	throws ClassNotFoundException, IllegalAccessException, InstantiationException, IOException, GeneralSecurityException
+    	throws ClassNotFoundException, IllegalAccessException, InstantiationException,
+               IOException, GeneralSecurityException
     {
     	InputStream keystoreStream = null;
     	
@@ -400,21 +410,43 @@ public class ZipSigner
     	}
     }
     
-    // Sign the input with the default test key and certificate.  
-    // Save result to output file.
+    /** Sign the input with the default test key and certificate.  
+     *  Save result to output file.
+     */
     public void signZip( String inputZipFilename, String outputZipFilename)
     	throws IOException, GeneralSecurityException
     {
+        // load the default private key
         URL privateKeyUrl = getClass().getResource("/keys/testkey.pk8");
         PrivateKey privateKey = readPrivateKey(privateKeyUrl, null);
-        
+
+        // load the default certificate
         URL publicKeyUrl = getClass().getResource("/keys/testkey.x509.pem");
         X509Certificate publicKey = readPublicKey(publicKeyUrl);
+
+        // load the default signature block template
+        URL sigBlockTemplateUrl = getClass().getResource("/keys/testkey.sbt");
+        byte[] sigBlockTemplate = readContentAsBytes(sigBlockTemplateUrl);
         
-        signZip( publicKey, privateKey, inputZipFilename, outputZipFilename);
+        signZip( publicKey, privateKey, sigBlockTemplate, inputZipFilename, outputZipFilename);
     }
-    
-    public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
+
+    /** Sign the file using the given public key cert and private key.  When using this metho
+     *  android-sun-jarsign-support.jar must be in the classpath.
+     */
+    public void signZip( X509Certificate publicKey, PrivateKey privateKey,
+                         String inputZipFilename, String outputZipFilename)
+        throws IOException, GeneralSecurityException
+    {
+        signZip( publicKey, privateKey, null, inputZipFilename, outputZipFilename);
+    }
+
+    /** Sign the file using the given public key cert, private key,
+     *  and signature block template.  The signature block template
+     *  parameter may be null, but if so
+     *  android-sun-jarsign-support.jar must be in the classpath.
+     */
+    public void signZip( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate,
     		String inputZipFilename, String outputZipFilename)
     throws IOException, GeneralSecurityException
     {
@@ -476,7 +508,7 @@ public class ZipSigner
         	byte[] sfBytes = out.toByteArray();
         	if (getLogger().isDebugEnabled()) {
         		getLogger().debug( "Signature File: \n" + new String( sfBytes) + "\n" + 
-        				new HexDumpEncoder().encode( sfBytes));
+        				HexDumpEncoder.encode( sfBytes));
         	}
         	outputJar.write(sfBytes);
         	signature.update(sfBytes);
@@ -487,17 +519,17 @@ public class ZipSigner
                 MessageDigest md = MessageDigest.getInstance("SHA1");
                 md.update( sfBytes);
                 byte[] sfDigest = md.digest();
-                getLogger().debug( "Sig File SHA1: \n" + new HexDumpEncoder().encode( sfDigest));
+                getLogger().debug( "Sig File SHA1: \n" + HexDumpEncoder.encode( sfDigest));
                 
-        		getLogger().debug( "Signature: \n" + new HexDumpEncoder().encode(signatureBytes));
+        		getLogger().debug( "Signature: \n" + HexDumpEncoder.encode(signatureBytes));
 
                 Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 cipher.init(Cipher.DECRYPT_MODE, publicKey);
 
         		byte[] tmpData = cipher.doFinal( signatureBytes);
-        		getLogger().debug( "Signature Decrypted: \n" + new HexDumpEncoder().encode(tmpData));
+        		getLogger().debug( "Signature Decrypted: \n" + HexDumpEncoder.encode(tmpData));
 
-        		getLogger().debug( "SHA1 ID: \n" + new HexDumpEncoder().encode(AlgorithmId.get("SHA1").encode()));
+//        		getLogger().debug( "SHA1 ID: \n" + HexDumpEncoder.encode(AlgorithmId.get("SHA1").encode()));
         		
 //        		// Compute signature using low-level APIs. 
 //                byte[] beforeAlgorithmIdBytes =  { 0x30, 0x21 };
@@ -513,7 +545,7 @@ public class ZipSigner
 //                cipher.update( afterAlgorithmIdBytes);
 //                cipher.update( sfDigest);
 //                byte[] tmpData2 = cipher.doFinal();
-//                getLogger().debug( "Signature : \n" + new HexDumpEncoder().encode(tmpData2));
+//                getLogger().debug( "Signature : \n" + HexDumpEncoder.encode(tmpData2));
         		
        		
         	}
@@ -523,7 +555,7 @@ public class ZipSigner
         	je = new JarEntry(CERT_RSA_NAME);
         	je.setTime(timestamp);
         	outputJar.putNextEntry(je);
-        	writeSignatureBlock(signatureBytes, publicKey, outputJar);
+        	writeSignatureBlock(signatureBlockTemplate, signatureBytes, publicKey, outputJar);
         	if (canceled) return;
         	
         	// Everything else

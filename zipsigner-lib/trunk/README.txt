@@ -18,12 +18,6 @@ DEPENDENCIES
 
 This project currently depends on other libraries:
 
-- android-sun-jarsign-support, which contains the Sun code required to
-  create a properly formated PKCS#7 signature block file. It also
-  contains Base64 and HexDump utilities.  The code in this library was
-  obtained from the OpenJDK project and is licensed under GPL version
-  2.
-
 - kellinwood-logging-lib, a small platform-independent logging
   framework.  In order to troubleshoot during development I needed to
   have zipsigner-lib run on both Android and my desktop JRE so I could
@@ -36,6 +30,15 @@ This project currently depends on other libraries:
   see any loggging output from zipsigner-lib on Android you'll need to
   include this library and activate it via a few API calls (see below).
   The source to this library is licensed under Apache 2.0.
+
+- OPTIONAL: android-sun-jarsign-support, which contains the Sun code
+  required to create a properly formated PKCS#7 signature block file.
+  This dependency is only needed if you are not using the default
+  certificate and have not supplied a signature block template file
+  (see below for more information on this subject). The code in this
+  library was obtained from the OpenJDK project and is licensed under
+  GPL version 2.
+
 
 SOURCE
 
@@ -118,9 +121,17 @@ SIGNING WITH OTHER CERTIFICATES
     // Load a pkcs8 encoded private key.  Password is only required if the key is encrypted.
     public PrivateKey readPrivateKey(URL privateKeyUrl, String keyPassword);
         
+    // Fetch the content at the specified URL and return it as a byte array.
+    // Use this method to load signature block template files.  
+    public byte[] readContentAsBytes( URL contentUrl);
+
     // Sign the zip using the given public/private key pair.
     public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
     		String inputZipFilename, String outputZipFilename);
+
+    // Sign the zip using the given public/private key pair and signature block template.
+    public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
+        		byte[] sigBockTemplate, String inputZipFilename, String outputZipFilename);
 
     // Sign the zip using a cert/key pair from the given keystore.  Keystore type on Android is "BKS".
     // See below for information on creating an Android compatible keystore.
@@ -175,3 +186,34 @@ keytool -list -v -keystore assets/keystore.ks \
 * When signing files using zipsigner-lib or the ZipSigner app and you
   get and "UnrecoverableKeyException: no match" error message, it
   means that you are providing a bad key password.
+
+
+SIGNATURE BLOCK TEMPLATE
+
+The signature block file, CERT.RSA, contains PCKS#7 formatted data.
+In the initial version of zipsigner-lib, the code in
+sun.security.x509, sun.security.pcks, etc, was used to write this data
+structure.  The only inputs are the x509 public key certificate and
+the signature bytes.  Luckily for us, the signature bytes are at the
+very end of the PCKS#7 block, making it easy to create a PCKS#7
+template based on the certificate and just append the signature bytes.
+This technique eliminates the dependency on a large part of the Sun
+code, but it means that a signature block template must be created for
+the certificate.
+
+Note that zipsigner-lib contains and loads a signature block template
+when using the default key and certificate.
+
+Step 1, sign a file using the certificate for which the template is
+needed.  Use the desktop command line version of zipsigner and give it
+the -d option so that you can see the signature data.
+
+Step 2, determine where the signature data begins in the signature
+block file (CERT.RSA).  This is typically at byte 1458, or address
+0x5b2.
+
+E.g., "unzip -c test_signed.zip META-INF/CERT.RSA | hexdump -C"
+
+Step 3, create the signature block template:
+
+unzip -qc test_signed.zip META-INF/CERT.RSA | dd bs=1458 count=1 >testkey.sbt

@@ -25,16 +25,15 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 
-import sun.security.x509.AlgorithmId;
-
 @SuppressWarnings("restriction")
 public class ZipSignature {
 
     byte[] beforeAlgorithmIdBytes =  { 0x30, 0x21 };
-    
-    // byte[] algorithmIdBytes = {0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00 }; 
-    byte[] algorithmIdBytes;
-    
+
+//      byte[] algorithmIdBytes;    
+//		algorithmIdBytes =  sun.security.x509.AlgorithmId.get("SHA1").encode();    
+    byte[] algorithmIdBytes = {0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00 }; 
+
     byte[] afterAlgorithmIdBytes = { 0x04, 0x14 };
     
     Cipher cipher;
@@ -46,7 +45,6 @@ public class ZipSignature {
 	{
 		md = MessageDigest.getInstance("SHA1");
 		cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-		algorithmIdBytes =  AlgorithmId.get("SHA1").encode();
 	}
 	
 	public void initSign( PrivateKey privateKey) throws InvalidKeyException 
