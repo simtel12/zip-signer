@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry kind="lib" path="/home/ken/workspace/android-sun-jarsign-support/target/android-sun-jarsign-support-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/home/ken/workspace/zipsigner-lib/target/zipsigner-lib-1.0-SNAPSHOT.jar" sourcepath="/zipsigner-lib/src/main/java"/>
+	<classpathentry kind="lib" path="/home/ken/workspace/kellinwood-logging-lib/target/kellinwood-logging-lib-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="/home/ken/workspace/kellinwood-logging-android/target/kellinwood-logging-android-1.0-SNAPSHOT.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

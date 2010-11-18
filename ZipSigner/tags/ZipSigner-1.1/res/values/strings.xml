@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ZipSigner</string>
+	
+	<string name="InputZipLabel">Input File (zip/apk/jar)</string>
+	<string name="OpenPickButtonLabel">Choose...</string>
+	<string name="FileManagerOpenButtonLabel">Choose</string>
+	
+	<string name="SignedZipLabel">Signed Output File</string>
+	<string name="SaveAsPickButtonLabel">Save As...</string>
+	<string name="FileManagerSaveButtonLabel">Save As</string>
+	
+	<string name="ESNoFileManagerInstalled">ES File Explorer is not installed.</string>
+	
+	<string name="SignButtonLabel">Sign The File</string>
+	
+	<string name="AboutZipSignerTitle">About</string>
+	<string name="AboutZipSignerBanner">Zip Signer</string>
+	<string name="AboutZipSignerVersionTemplate">Version: %s</string>
+	<string name="AboutZipSignerDescription">Signs zip, apk, and/or jar files.</string>
+	<string name="AboutZipSignerAuthor">Author: Ken Ellinwood</string>
+	<string name="AboutZipSignerCopyright">Copyright 2010.  All rights reserved.</string>
+	<string name="AboutZipSignerDocumentation">Visit the webpage</string>
+	<string name="AboutZipSignerDocUrlPattern">webpage</string>
+	<string name="AboutZipSignerDocUrl">http://code.google.com/p/zip-signer/wiki/ZipSigner</string>
+		
+	<string name="CloseButtonLabel">Close</string>
+	<string name="CancelButtonLabel">Cancel</string>
+	
+	
+	<string name="SigningZipLabel">Signing %s...</string>
+</resources>
