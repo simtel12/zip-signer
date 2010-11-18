@@ -8,7 +8,7 @@ API and app for signing Zip, Apk, and/or Jar files onboard Android devices.
 = Details =
 
 This project is divided into five sub-projects.
-  * zipsigner-lib - a file signing library.  As Java code it should work anywhere, but its specifically targeted at Android application developers. Licensed under Apache 2.0.
+  * zipsigner-lib - a file signing library with a simple API and built-in default certificate.  As Java code it should work anywhere, but its specifically targeted at Android application developers. Licensed under Apache 2.0.
   * android-sun-jarsign-support - provides support for generating the PKCS#7 signature block file.  This is modified Sun code obtained from the OpenJDK project and is licensed under GPL v2.  Including this library in your project is optional since zipsigner-lib has a way to create the signature block with far less code.  In most cases it isn't needed. Please see the zipsigner-lib README file for more details.
   * ZipSigner - an Android app that integrates zipsigner-lib and signs files onboard the device. Licensed under Apache 2.0.
   * kellinwood-logging-lib - a lightweight, platform-independent logging framework.  Licensed under Apache 2.0.
