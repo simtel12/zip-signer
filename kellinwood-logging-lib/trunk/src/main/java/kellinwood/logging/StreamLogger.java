@@ -29,7 +29,7 @@ public class StreamLogger extends AbstractLogger {
 	
 	@Override
 	protected void write(String level, String message, Throwable t) {
-		out.println( format( level, message));
+		out.print( format( level, message));
 		if (t != null) t.printStackTrace(out);
 	}
 
