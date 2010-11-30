@@ -62,7 +62,7 @@ import kellinwood.security.zipsigner.ZipSigner;
 try {
     // Sign with the built-in default test key/certificate.
     ZipSigner zipSigner = new ZipSigner();
-    zipSigner.zipSigner.signZip( inputFile, outputFile);
+    zipSigner.signZip( inputFile, outputFile);
 }
 catch (Throwable t) {
     // log, display toast, etc.
@@ -74,14 +74,14 @@ GETTING PROGRESS UPDATES:
 import kellinwood.security.zipsigner.ProgressListener;
 
 ZipSigner zipSigner = new ZipSigner();
-zipSigner.zipSigner.addProgressListener( new ProgressListener() {
+zipSigner.addProgressListener( new ProgressListener() {
    public void onProgress( String currentItem, int percentDone)
    {
        // Current item is the basename of a file in the zip being signed.
        // percentDone is a value between 0 and 100
    }
 });
-zipSigner.zipSigner.signZip( inputFile, outputFile);
+zipSigner.signZip( inputFile, outputFile);
 
 
 ENABLING LOG OUTPUT:
