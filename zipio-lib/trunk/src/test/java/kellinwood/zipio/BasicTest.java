@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2010 Ken Ellinwood
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package kellinwood.zipio;
 
 
@@ -35,15 +50,21 @@ public class BasicTest {
             
             LoggerManager.setLoggerFactory( new Log4jLoggerFactory());
             
+            boolean debug = getLogger().isDebugEnabled();
+            
             String inputFile = getClass().getResource("/simple_test.zip").getFile(); 
-            getLogger().info("Loading " + inputFile);
+            if (debug) getLogger().debug("Loading " + inputFile);
             
             ZipInput zipInput = ZipInput.read( inputFile);
-            getLogger().info("Entry count: " + zipInput.getEntries().size());
+            if (debug) getLogger().debug("Entry count: " + zipInput.getEntries().size());
+
+            // Check that we got two entries.
+            assertEquals( 2, zipInput.getEntries().size());
             
+            // Fetch an entry
             CentralEntry entry = zipInput.getEntries().values().iterator().next();
             
-            
+            // Check setTime(), getTime() by using identity transform:  setTime(date), new Date(getTime()) == date
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             
             String inputDate = "2010-12-25 02:59:42";
@@ -55,15 +76,10 @@ public class BasicTest {
             
             String testDate = dateFormat.format( date);
             
-            log.info( String.format("Input date: %s, test date: %s", inputDate, testDate));
+            if (debug) getLogger().debug( String.format("Input date: %s, test date: %s", inputDate, testDate));
             
             assertEquals( inputDate, testDate);
             
-            getLogger().info("File "+entry.getName()+", date: " + dateFormat.format(date));
-            
-            
-            
-            assertTrue(true);    
         }
         catch (Exception x) {
             getLogger().error( x.getMessage(), x);

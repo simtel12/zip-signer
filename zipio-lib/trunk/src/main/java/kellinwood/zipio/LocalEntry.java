@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2010 Ken Ellinwood
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package kellinwood.zipio;
 
 import java.io.ByteArrayOutputStream;
@@ -196,10 +211,10 @@ public class LocalEntry {
 
         if (entryOut != null) {
             entryOut.close();
-            crc32 = entryOut.getCRC();
             size = entryOut.getSize();
-            compressedSize = entryOut.getCompressedSize();
             data = entryOut.getData();
+            compressedSize = data.length;
+            crc32 = entryOut.getCRC();
         }
         
         output.writeInt( signature);
@@ -303,54 +318,56 @@ public class LocalEntry {
         return result;
     }
 
-    public OutputStream getDataOutputStream() {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        if (compression == 8) { // Deflate
-            DeflaterOutputStream dos = new DeflaterOutputStream( baos, new Deflater( Deflater.BEST_COMPRESSION, true));
-            entryOut = new EntryOutputStream( dos, baos);
-        }
-        else entryOut = new EntryOutputStream( baos, baos);
-
+    public OutputStream getDataOutputStream() 
+    {
+        entryOut = new EntryOutputStream( compression);
         return entryOut;
     }
 
-    class EntryOutputStream extends FilterOutputStream {
-        int size = 0;
-        ByteArrayOutputStream baos;
+    static class EntryOutputStream extends OutputStream {
+        int size = 0;  // tracks uncompressed size of data
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         CRC32 crc = new CRC32();
+        int crcValue = 0;
+        OutputStream downstream;
         
-        public EntryOutputStream( OutputStream next, ByteArrayOutputStream baos) {
-            super( next);
-            this.baos = baos;
+        public EntryOutputStream( int compression) {
+            
+            if (compression != 0)
+                downstream = new DeflaterOutputStream( baos, new Deflater( Deflater.BEST_COMPRESSION, true));
+            else downstream = baos;    
         }
 
         public void close() throws IOException {
-            super.close();
+            downstream.flush();
+            downstream.close();
+            crcValue = (int)crc.getValue();
         }
 
+        public int getCRC() {
+            return crcValue;
+        }
+        
         public void flush() throws IOException {
-            super.flush();
+            downstream.flush();
         }
 
         public void write(byte[] b) throws IOException {
-            write( b, 0, b.length);
+            downstream.write(b);
+            crc.update(b);
+            size += b.length;
         }
 
         public void write(byte[] b, int off, int len) throws IOException {
-            super.write( b, off, len);
+            downstream.write( b, off, len);
             crc.update( b, off, len);
             size += len;
         }
 
         public void write(int b) throws IOException {
-            super.write( b);
+            downstream.write( b);
             crc.update( b);
             size += 1;
-        }
-
-        public int getCRC() {
-            return (int)crc.getValue();
         }
 
         public int getSize() {
@@ -361,8 +378,5 @@ public class LocalEntry {
             return baos.toByteArray();
         }
 
-        public int getCompressedSize() {
-            return baos.toByteArray().length;
-        }
     }
 }
