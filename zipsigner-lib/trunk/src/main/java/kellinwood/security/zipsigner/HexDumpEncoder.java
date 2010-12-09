@@ -27,7 +27,7 @@ import java.io.ByteArrayOutputStream;
 public class HexDumpEncoder {
 
     static HexEncoder encoder = new HexEncoder();
-    
+
     public static String encode( byte[] data) {
 
         try {
@@ -42,9 +42,9 @@ public class HexDumpEncoder {
 
                 StringBuilder hexOut = new StringBuilder();
                 StringBuilder chrOut = new StringBuilder();
-                
+
                 hexOut.append( String.format("%08x: ", (i/2)));
-                            
+
                 for (int j = i; j < max; j+= 2) {
                     hexOut.append( Character.valueOf( (char)hex[j]));
                     hexOut.append( Character.valueOf( (char)hex[j+1]));
@@ -55,7 +55,7 @@ public class HexDumpEncoder {
                     else chrOut.append( '.');
 
                 }
-                
+
                 hexDumpOut.append( hexOut.toString());
                 for (int k = hexOut.length(); k < 50; k++) hexDumpOut.append(' ');
                 hexDumpOut.append( "  ");

@@ -22,6 +22,6 @@ public interface ProgressListener {
         @param currentItem the name of the item being processed.
         @param percentDone a value between 0 and 100 indicating 
                percent complete.
-    */
+     */
     public void onProgress( String currentItem, int percentDone);
 }

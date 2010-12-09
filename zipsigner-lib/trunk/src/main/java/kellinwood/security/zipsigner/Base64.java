@@ -24,7 +24,7 @@ import java.io.ByteArrayOutputStream;
 public class Base64 {
 
     static Base64Encoder encoder = new Base64Encoder();
-    
+
     public static String encode( byte[] data) {
 
         try {

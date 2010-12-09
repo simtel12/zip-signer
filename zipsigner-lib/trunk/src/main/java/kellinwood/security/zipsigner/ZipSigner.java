@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2010 Ken Ellinwood
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,13 +31,11 @@ package kellinwood.security.zipsigner;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.net.URL;
 import java.security.cert.Certificate;
 import java.security.DigestOutputStream;
@@ -48,7 +47,6 @@ import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.Security;
-import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -56,24 +54,23 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
 import java.util.regex.Pattern;
 import javax.crypto.Cipher;
 import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
-import javax.security.auth.x500.X500Principal;
 
 import kellinwood.logging.LoggerInterface;
 import kellinwood.logging.LoggerManager;
+import kellinwood.zipio.ZioEntry;
+import kellinwood.zipio.ZipInput;
+import kellinwood.zipio.ZipOutput;
 
 import java.util.jar.Attributes;
+import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 /**
@@ -83,47 +80,46 @@ import java.util.jar.Manifest;
  *
  * Please see the README.txt file in the root of this project for usage instructions.
  */
-@SuppressWarnings("restriction")
 public class ZipSigner 
 {
 
-	private boolean canceled = false;
-	
+    private boolean canceled = false;
+
     private int progressTotalItems = 0;
     private int progressCurrentItem = 0;
-    
-	static LoggerInterface log = null;
-	
+
+    static LoggerInterface log = null;
+
     private static final String CERT_SF_NAME = "META-INF/CERT.SF";
     private static final String CERT_RSA_NAME = "META-INF/CERT.RSA";
 
     // Files matching this pattern are not copied to the output.
     private static Pattern stripPattern =
-            Pattern.compile("^META-INF/(.*)[.](SF|RSA|DSA)$");
+        Pattern.compile("^META-INF/(.*)[.](SF|RSA|DSA)$");
 
 
 
     // Allow the operation to be canceled.
     public void cancel() {
-    	canceled = true;
+        canceled = true;
     }
-    
+
     public boolean isCanceled() {
-    	return canceled;
+        return canceled;
     }
-    
+
     @SuppressWarnings("unchecked")
-	public void loadProvider( String providerClassName)
-        throws ClassNotFoundException, IllegalAccessException, InstantiationException
+    public void loadProvider( String providerClassName)
+    throws ClassNotFoundException, IllegalAccessException, InstantiationException
     {
-		Class providerClass = Class.forName(providerClassName);
-		Provider provider = (Provider)providerClass.newInstance();
-		Security.insertProviderAt(provider, 1);
+        Class providerClass = Class.forName(providerClassName);
+        Provider provider = (Provider)providerClass.newInstance();
+        Security.insertProviderAt(provider, 1);
     }
-    
-    
+
+
     public X509Certificate readPublicKey(URL publicKeyUrl)
-            throws IOException, GeneralSecurityException {
+    throws IOException, GeneralSecurityException {
         InputStream input = publicKeyUrl.openStream();
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -143,7 +139,7 @@ public class ZipSigner
      * @param keyFile The file containing the private key
      */
     private KeySpec decryptPrivateKey(byte[] encryptedPrivateKey, String keyPassword)
-            throws GeneralSecurityException {
+    throws GeneralSecurityException {
         EncryptedPrivateKeyInfo epkInfo;
         try {
             epkInfo = new EncryptedPrivateKeyInfo(encryptedPrivateKey);
@@ -180,20 +176,20 @@ public class ZipSigner
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         byte[] buffer = new byte[2048];
-        
+
         int numRead = input.read( buffer);
         while (numRead != -1) {
             baos.write( buffer, 0, numRead);
             numRead = input.read( buffer);
         }
-        
+
         byte[] bytes = baos.toByteArray();
         return bytes;
     }
-    
+
     /** Read a PKCS 8 format private key. */
     public PrivateKey readPrivateKey(URL privateKeyUrl, String keyPassword)
-            throws IOException, GeneralSecurityException {
+    throws IOException, GeneralSecurityException {
         DataInputStream input = new DataInputStream( privateKeyUrl.openStream());
         try {
             byte[] bytes = readContentAsBytes( input);
@@ -214,9 +210,14 @@ public class ZipSigner
     }
 
     /** Add the SHA1 of every file to the manifest, creating it if necessary. */
-    private Manifest addDigestsToManifest(JarFile jar)
-            throws IOException, GeneralSecurityException {
-        java.util.jar.Manifest input = jar.getManifest();
+    private Manifest addDigestsToManifest(Map<String,ZioEntry> entries)
+        throws IOException, GeneralSecurityException 
+    {
+        ZioEntry manifestEntry = entries.get(JarFile.MANIFEST_NAME);
+
+        if (manifestEntry == null) throw new IllegalStateException("Not found: " + JarFile.MANIFEST_NAME);
+        java.util.jar.Manifest input = new Manifest();
+        input.read( manifestEntry.getInputStream());
         Manifest output = new Manifest();
         Attributes main = output.getMainAttributes();
         if (input != null) {
@@ -235,31 +236,27 @@ public class ZipSigner
         // output manifest in sorted order.  We expect that the output
         // map will be deterministic.
 
-        TreeMap<String, JarEntry> byName = new TreeMap<String, JarEntry>();
-
-        for (Enumeration<JarEntry> e = jar.entries(); !canceled && e.hasMoreElements(); ) {
-            JarEntry entry = e.nextElement();
-            byName.put(entry.getName(), entry);
-        }
+        TreeMap<String, ZioEntry> byName = new TreeMap<String, ZioEntry>();
+        byName.putAll( entries);
 
         getLogger().debug("Manifest entries:");
-        for (JarEntry entry: byName.values()) {
-        	if (canceled) break;
+        for (ZioEntry entry: byName.values()) {
+            if (canceled) break;
             String name = entry.getName();
             getLogger().debug(name);
             if (!entry.isDirectory() && !name.equals(JarFile.MANIFEST_NAME) &&
-                !name.equals(CERT_SF_NAME) && !name.equals(CERT_RSA_NAME) &&
-                (stripPattern == null ||
-                 !stripPattern.matcher(name).matches())) {
-                InputStream data = jar.getInputStream(entry);
+                    !name.equals(CERT_SF_NAME) && !name.equals(CERT_RSA_NAME) &&
+                    (stripPattern == null ||
+                            !stripPattern.matcher(name).matches())) {
+                InputStream data = entry.getInputStream();
                 while ((num = data.read(buffer)) > 0) {
                     md.update(buffer, 0, num);
                 }
 
                 Attributes attr = null;
                 if (input != null) {
-                	java.util.jar.Attributes inAttr = input.getAttributes(name); 
-                	if (inAttr != null) attr = new Attributes( inAttr);
+                    java.util.jar.Attributes inAttr = input.getAttributes(name); 
+                    if (inAttr != null) attr = new Attributes( inAttr);
                 }
                 if (attr == null) attr = new Attributes();
                 attr.putValue("SHA1-Digest", Base64.encode(md.digest()));
@@ -270,10 +267,10 @@ public class ZipSigner
         return output;
     }
 
-    
+
     /** Write the signature file to the given output stream. */
     private void generateSignatureFile(Manifest manifest, OutputStream out)
-            throws IOException, GeneralSecurityException {
+    throws IOException, GeneralSecurityException {
         out.write( ("Signature-Version: 1.0\r\n").getBytes());
         out.write( ("Created-By: 1.0 (Android SignApk)\r\n").getBytes());
 
@@ -292,9 +289,9 @@ public class ZipSigner
 
         Map<String, Attributes> entries = manifest.getEntries();
         for (Map.Entry<String, Attributes> entry : entries.entrySet()) {
-        	if (canceled) break;
+            if (canceled) break;
             // Digest of the manifest stanza for this entry.
-        	String nameEntry = "Name: " + entry.getKey() + "\r\n"; 
+            String nameEntry = "Name: " + entry.getKey() + "\r\n"; 
             print.print( nameEntry);
             for (Map.Entry<Object, Object> att : entry.getValue().entrySet()) {
                 print.print(att.getKey() + ": " + att.getValue() + "\r\n");
@@ -311,7 +308,7 @@ public class ZipSigner
     /** Write a .RSA file with a digital signature. */
     private void writeSignatureBlock( byte[] signatureBlockTemplate,
             byte[] signatureBytes, X509Certificate publicKey, OutputStream out)
-        throws IOException, GeneralSecurityException
+    throws IOException, GeneralSecurityException
     {
         if (signatureBlockTemplate != null) {
             out.write( signatureBlockTemplate);
@@ -324,14 +321,14 @@ public class ZipSigner
                 Class sigWriterClass = Class.forName( "kellinwood.sigblock.SignatureBlockWriter");
                 Method sigWriterMethod =
                     sigWriterClass.getMethod( "writeSignatureBlock", (new byte[1]).getClass(),
-                                              X509Certificate.class, OutputStream.class);
+                            X509Certificate.class, OutputStream.class);
                 if (sigWriterMethod == null) throw new IllegalStateException("writeSignatureBlock() method not found.");
                 sigWriterMethod.invoke( null, signatureBytes, publicKey, out);
             }
             catch (Exception x) {
                 getLogger().error( x.getMessage(), x);
                 throw new IllegalStateException("Failed to invoke writeSignatureBlock(): " +
-                                                x.getClass().getName() + ": " + x.getMessage());
+                        x.getClass().getName() + ": " + x.getMessage());
             }
         }
     }
@@ -342,79 +339,64 @@ public class ZipSigner
      * reduce variation in the output file and make incremental OTAs
      * more efficient.
      */
-    private void copyFiles(Manifest manifest,
-        JarFile in, JarOutputStream out, long timestamp) throws IOException {
-        byte[] buffer = new byte[4096];
-        int num;
-
+    private void copyFiles(Manifest manifest, Map<String,ZioEntry> input, ZipOutput output, long timestamp)
+        throws IOException 
+    {
         Map<String, Attributes> entries = manifest.getEntries();
         List<String> names = new ArrayList<String>(entries.keySet());
         Collections.sort(names);
         for (String name : names) {
-        	if (canceled) break;
+            if (canceled) break;
             progress( name);
-            JarEntry inEntry = in.getJarEntry(name);
-            JarEntry outEntry = null;
-            if (inEntry.getMethod() == JarEntry.STORED) {
-                // Preserve the STORED method of the input entry.
-                outEntry = new JarEntry(inEntry);
-            } else {
-                // Create a new entry so that the compressed len is recomputed.
-                outEntry = new JarEntry(name);
-            }
-            outEntry.setTime(timestamp);
-            out.putNextEntry(outEntry);
+            ZioEntry inEntry = input.get(name);
+            inEntry.setTime(timestamp);
+            output.write(inEntry);
 
-            InputStream data = in.getInputStream(inEntry);
-            while ((num = data.read(buffer)) > 0) {
-                out.write(buffer, 0, num);
-            }
-            out.flush();
         }
     }
-    
-    public LoggerInterface getLogger() {
-    	if (log == null) log = LoggerManager.getLogger( this.getClass().getName());
-    	return log;
-    }
-    
-    public void signZip( URL keystoreURL, 
-    							String keystoreType,
-    			   				String keystorePw, 
-    			   				String certAlias,
-    			   				String certPw, 
-    			   				String inputZipFilename, 
-    			   				String outputZipFilename)
-    	throws ClassNotFoundException, IllegalAccessException, InstantiationException,
-               IOException, GeneralSecurityException
-    {
-    	InputStream keystoreStream = null;
-    	
-    	
-    	try {
-    		KeyStore keystore = null;
-    		if (keystoreType == null) keystoreType = KeyStore.getDefaultType();
-    		keystore = KeyStore.getInstance(keystoreType);
-    			
-    		keystoreStream = keystoreURL.openStream();
-    		keystore.load(keystoreStream, keystorePw.toCharArray());
-    		Certificate cert = keystore.getCertificate(certAlias);
-    		X509Certificate publicKey = (X509Certificate)cert;
-    		Key key = keystore.getKey(certAlias, certPw.toCharArray());
-    		PrivateKey privateKey = (PrivateKey)key;
 
-    		signZip( publicKey, privateKey, inputZipFilename, outputZipFilename);
-    	}
-    	finally {
-    		if (keystoreStream != null) keystoreStream.close();
-    	}
+    public LoggerInterface getLogger() {
+        if (log == null) log = LoggerManager.getLogger( this.getClass().getName());
+        return log;
     }
-    
+
+    public void signZip( URL keystoreURL, 
+            String keystoreType,
+            String keystorePw, 
+            String certAlias,
+            String certPw, 
+            String inputZipFilename, 
+            String outputZipFilename)
+    throws ClassNotFoundException, IllegalAccessException, InstantiationException,
+    IOException, GeneralSecurityException
+    {
+        InputStream keystoreStream = null;
+
+
+        try {
+            KeyStore keystore = null;
+            if (keystoreType == null) keystoreType = KeyStore.getDefaultType();
+            keystore = KeyStore.getInstance(keystoreType);
+
+            keystoreStream = keystoreURL.openStream();
+            keystore.load(keystoreStream, keystorePw.toCharArray());
+            Certificate cert = keystore.getCertificate(certAlias);
+            X509Certificate publicKey = (X509Certificate)cert;
+            Key key = keystore.getKey(certAlias, certPw.toCharArray());
+            PrivateKey privateKey = (PrivateKey)key;
+
+            signZip( publicKey, privateKey, inputZipFilename, outputZipFilename);
+        }
+        finally {
+            if (keystoreStream != null) keystoreStream.close();
+        }
+    }
+
     /** Sign the input with the default test key and certificate.  
      *  Save result to output file.
      */
     public void signZip( String inputZipFilename, String outputZipFilename)
-    	throws IOException, GeneralSecurityException
+    throws IOException, GeneralSecurityException
     {
         // load the default private key
         URL privateKeyUrl = getClass().getResource("/keys/testkey.pk8");
@@ -427,7 +409,7 @@ public class ZipSigner
         // load the default signature block template
         URL sigBlockTemplateUrl = getClass().getResource("/keys/testkey.sbt");
         byte[] sigBlockTemplate = readContentAsBytes(sigBlockTemplateUrl);
-        
+
         signZip( publicKey, privateKey, sigBlockTemplate, inputZipFilename, outputZipFilename);
     }
 
@@ -435,8 +417,8 @@ public class ZipSigner
      *  android-sun-jarsign-support.jar must be in the classpath.
      */
     public void signZip( X509Certificate publicKey, PrivateKey privateKey,
-                         String inputZipFilename, String outputZipFilename)
-        throws IOException, GeneralSecurityException
+            String inputZipFilename, String outputZipFilename)
+    throws IOException, GeneralSecurityException
     {
         signZip( publicKey, privateKey, null, inputZipFilename, outputZipFilename);
     }
@@ -447,137 +429,142 @@ public class ZipSigner
      *  android-sun-jarsign-support.jar must be in the classpath.
      */
     public void signZip( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate,
-    		String inputZipFilename, String outputZipFilename)
+            String inputZipFilename, String outputZipFilename)
     throws IOException, GeneralSecurityException
     {
-    	
-    	canceled = false;
+        if (inputZipFilename.equals( outputZipFilename)) {
+            throw new IllegalArgumentException("Input and output filenames are the same.  Specify a different name for the output.");
+        }        
+        
+        ZipInput input = ZipInput.read( inputZipFilename);
+        signZip( publicKey, privateKey, signatureBlockTemplate, input.getEntries(), outputZipFilename);
+    }
     
-    	if (inputZipFilename.equals( outputZipFilename)) {
-    		throw new IllegalArgumentException("Input and output filenames are the same.  Specify a different name for the output.");
-    	}
-    	
-        JarFile inputJar = null;
-        JarOutputStream outputJar = null;
+    /** Sign the file using the given public key cert, private key,
+     *  and signature block template.  The signature block template
+     *  parameter may be null, but if so
+     *  android-sun-jarsign-support.jar must be in the classpath.
+     */
+    public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
+            byte[] signatureBlockTemplate,
+            Map<String,ZioEntry> zioEntries, String outputZipFilename)
+        throws IOException, GeneralSecurityException    
+    {
+        canceled = false;
+
+        ZipOutput zipOutput = null;
         log = LoggerManager.getLogger( ZipSigner.class.getName());
 
         try {
-        	// Assume the certificate is valid for at least an hour.
-        	long timestamp = publicKey.getNotBefore().getTime() + 3600L * 1000;
-        	
-        	inputJar = new JarFile(new File(inputZipFilename), false);  // Don't verify.
-        	outputJar = new JarOutputStream(new FileOutputStream(outputZipFilename));
-        	outputJar.setLevel(9);
+            // Assume the certificate is valid for at least an hour.
+            long timestamp = publicKey.getNotBefore().getTime() + 3600L * 1000;
 
-            initProgress( inputJar.size()+3); // num entries + MANIFEST.MF, CERT.SF, CERT.RSA
-            
-        	JarEntry je;
-        	
-        	// MANIFEST.MF
+            zipOutput = new ZipOutput( outputZipFilename);
+
+            initProgress( zioEntries.size()+3); // num entries + MANIFEST.MF, CERT.SF, CERT.RSA
+
+
+            // MANIFEST.MF
             progress(JarFile.MANIFEST_NAME);
-        	Manifest manifest = addDigestsToManifest(inputJar);
-        	if (canceled) return;
-        	je = new JarEntry(JarFile.MANIFEST_NAME);
-        	je.setTime(timestamp);
-        	outputJar.putNextEntry(je);
-        	manifest.write(outputJar);
-        	
-        	// CERT.SF
+            Manifest manifest = addDigestsToManifest(zioEntries);
+            if (canceled) return;
+            ZioEntry ze = new ZioEntry( JarFile.MANIFEST_NAME);
+            ze.setTime(timestamp);
+            manifest.write(ze.getOutputStream());
+            zipOutput.write(ze);
+            
+
+            // CERT.SF
             progress( CERT_SF_NAME);
-        	
+
             // Can't use default Signature on Android.  Although it generates a signature that can be verified by jarsigner,
             // the recovery program appears to require a specific algorithm/mode/padding.  So we use the custom ZipSignature instead.
-        	// Signature signature = Signature.getInstance("SHA1withRSA"); 
-        	ZipSignature signature = new ZipSignature();
-        	signature.initSign(privateKey);
-        	
-//        	if (getLogger().isDebugEnabled()) {
-//        		getLogger().debug(String.format("Signature provider=%s, alg=%s, class=%s",
-//        				signature.getProvider().getName(),
-//        				signature.getAlgorithm(),
-//        				signature.getClass().getName()));
-//        	}
+            // Signature signature = Signature.getInstance("SHA1withRSA"); 
+            ZipSignature signature = new ZipSignature();
+            signature.initSign(privateKey);
 
-        	
-        	je = new JarEntry(CERT_SF_NAME);
-        	je.setTime(timestamp);
-        	outputJar.putNextEntry(je);
-        	ByteArrayOutputStream out = new ByteArrayOutputStream();
-        	generateSignatureFile(manifest, out);
-        	if (canceled) return;
-        	byte[] sfBytes = out.toByteArray();
-        	if (getLogger().isDebugEnabled()) {
-        		getLogger().debug( "Signature File: \n" + new String( sfBytes) + "\n" + 
-        				HexDumpEncoder.encode( sfBytes));
-        	}
-        	outputJar.write(sfBytes);
-        	signature.update(sfBytes);
-        	byte[] signatureBytes = signature.sign();
-        	
-        	if (getLogger().isDebugEnabled()) {
+            //        	if (getLogger().isDebugEnabled()) {
+            //        		getLogger().debug(String.format("Signature provider=%s, alg=%s, class=%s",
+            //        				signature.getProvider().getName(),
+            //        				signature.getAlgorithm(),
+            //        				signature.getClass().getName()));
+            //        	}
+
+
+            ze = new ZioEntry(CERT_SF_NAME);
+            ze.setTime(timestamp);
+            
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            generateSignatureFile(manifest, out);
+            if (canceled) return;
+            byte[] sfBytes = out.toByteArray();
+            if (getLogger().isDebugEnabled()) {
+                getLogger().debug( "Signature File: \n" + new String( sfBytes) + "\n" + 
+                        HexDumpEncoder.encode( sfBytes));
+            }
+            ze.getOutputStream().write(sfBytes);
+            zipOutput.write(ze);
+            signature.update(sfBytes);
+            byte[] signatureBytes = signature.sign();
+
+            if (getLogger().isDebugEnabled()) {
 
                 MessageDigest md = MessageDigest.getInstance("SHA1");
                 md.update( sfBytes);
                 byte[] sfDigest = md.digest();
                 getLogger().debug( "Sig File SHA1: \n" + HexDumpEncoder.encode( sfDigest));
-                
-        		getLogger().debug( "Signature: \n" + HexDumpEncoder.encode(signatureBytes));
+
+                getLogger().debug( "Signature: \n" + HexDumpEncoder.encode(signatureBytes));
 
                 Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
                 cipher.init(Cipher.DECRYPT_MODE, publicKey);
 
-        		byte[] tmpData = cipher.doFinal( signatureBytes);
-        		getLogger().debug( "Signature Decrypted: \n" + HexDumpEncoder.encode(tmpData));
+                byte[] tmpData = cipher.doFinal( signatureBytes);
+                getLogger().debug( "Signature Decrypted: \n" + HexDumpEncoder.encode(tmpData));
 
-//        		getLogger().debug( "SHA1 ID: \n" + HexDumpEncoder.encode(AlgorithmId.get("SHA1").encode()));
-        		
-//        		// Compute signature using low-level APIs. 
-//                byte[] beforeAlgorithmIdBytes =  { 0x30, 0x21 };
-//                // byte[] algorithmIdBytes = {0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00 }; 
-//                byte[] algorithmIdBytes =  AlgorithmId.get("SHA1").encode();
-//                byte[] afterAlgorithmIdBytes = { 0x04, 0x14 };
-//                cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-//                cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-//                getLogger().debug( "Cipher: " + cipher.getAlgorithm() + ", blockSize = " + cipher.getBlockSize());
-//                
-//                cipher.update( beforeAlgorithmIdBytes);
-//                cipher.update( algorithmIdBytes);
-//                cipher.update( afterAlgorithmIdBytes);
-//                cipher.update( sfDigest);
-//                byte[] tmpData2 = cipher.doFinal();
-//                getLogger().debug( "Signature : \n" + HexDumpEncoder.encode(tmpData2));
-        		
-       		
-        	}
-        	
-        	// CERT.RSA
+                //        		getLogger().debug( "SHA1 ID: \n" + HexDumpEncoder.encode(AlgorithmId.get("SHA1").encode()));
+
+                //        		// Compute signature using low-level APIs. 
+                //                byte[] beforeAlgorithmIdBytes =  { 0x30, 0x21 };
+                //                // byte[] algorithmIdBytes = {0x30, 0x09, 0x06, 0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A, 0x05, 0x00 }; 
+                //                byte[] algorithmIdBytes =  AlgorithmId.get("SHA1").encode();
+                //                byte[] afterAlgorithmIdBytes = { 0x04, 0x14 };
+                //                cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+                //                cipher.init(Cipher.ENCRYPT_MODE, privateKey);
+                //                getLogger().debug( "Cipher: " + cipher.getAlgorithm() + ", blockSize = " + cipher.getBlockSize());
+                //                
+                //                cipher.update( beforeAlgorithmIdBytes);
+                //                cipher.update( algorithmIdBytes);
+                //                cipher.update( afterAlgorithmIdBytes);
+                //                cipher.update( sfDigest);
+                //                byte[] tmpData2 = cipher.doFinal();
+                //                getLogger().debug( "Signature : \n" + HexDumpEncoder.encode(tmpData2));
+
+
+            }
+
+            // CERT.RSA
             progress( CERT_RSA_NAME);
-        	je = new JarEntry(CERT_RSA_NAME);
-        	je.setTime(timestamp);
-        	outputJar.putNextEntry(je);
-        	writeSignatureBlock(signatureBlockTemplate, signatureBytes, publicKey, outputJar);
-        	if (canceled) return;
-        	
-        	// Everything else
-        	copyFiles(manifest, inputJar, outputJar, timestamp);
-        	if (canceled) return;
-        	outputJar.flush();
+            ze = new ZioEntry(CERT_RSA_NAME);
+            ze.setTime(timestamp);
+            writeSignatureBlock(signatureBlockTemplate, signatureBytes, publicKey, ze.getOutputStream());
+            zipOutput.write( ze);
+            if (canceled) return;
+
+            // Everything else
+            copyFiles(manifest, zioEntries, zipOutput, timestamp);
+            if (canceled) return;
+            zipOutput.close();
         }
         finally {
-            try {
-                if (inputJar != null) inputJar.close();
-                if (outputJar != null) outputJar.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } 
-            
+
             if (canceled) {
-            	try {
-            		new File( outputZipFilename).delete();
-            	}
-            	catch (Throwable t) {
-            		getLogger().warning( t.getClass().getName() + ":" + t.getMessage());
-            	}
+                try {
+                    new File( outputZipFilename).delete();
+                }
+                catch (Throwable t) {
+                    getLogger().warning( t.getClass().getName() + ":" + t.getMessage());
+                }
             }
         }
     }
@@ -587,7 +574,7 @@ public class ZipSigner
         progressTotalItems = totalItems;
         progressCurrentItem = 0;
     }
-    
+
     private void progress( String itemName) {
 
         // Create short version of item name
@@ -612,12 +599,12 @@ public class ZipSigner
         list.add(l);
         listeners = list;
     }
-    
+
     public synchronized void removeProgressListener( ProgressListener l)
     {
         ArrayList<ProgressListener> list = (ArrayList<ProgressListener>)listeners.clone();
         list.remove(l);
         listeners = list;
     }    
-        
+
 }
