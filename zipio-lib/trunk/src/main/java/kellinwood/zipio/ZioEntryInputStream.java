@@ -19,17 +19,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-public class EntryStream extends InputStream {
+/** Input stream used to read just the data from a zip file entry. */
+public class ZioEntryInputStream extends InputStream {
 
     RandomAccessFile raf;
     int size;
     int offset;
 
-    public EntryStream( LocalEntry entry) throws IOException {
+    public ZioEntryInputStream( ZioEntry entry) throws IOException {
         offset = 0;
-        size = entry.compressedSize;
-        raf = entry.zipInput.in;
-        raf.seek( entry.dataPosition);
+        size = entry.getCompressedSize();
+        raf = entry.getZipInput().in;
+        raf.seek( entry.getDataPosition());
     }
 
     @Override

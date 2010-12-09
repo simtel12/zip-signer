@@ -57,14 +57,14 @@ public class CreateZipFileTest {
             
             ZipOutput zipOutput = new ZipOutput( outputFile);
             
-            CentralEntry entry = new CentralEntry( "B.txt");
-            OutputStream entryOut = entry.getDataOutputStream();
+            ZioEntry entry = new ZioEntry( "B.txt");
+            OutputStream entryOut = entry.getOutputStream();
             entryOut.write( "The answer to the ultimate question of life, the universe, and everything is 42.".getBytes());
             zipOutput.write(entry);
             
-            entry = new CentralEntry( "A.txt");
+            entry = new ZioEntry( "A.txt");
             entry.setCompression(0);
-            entryOut = entry.getDataOutputStream();
+            entryOut = entry.getOutputStream();
             entryOut.write( "The name of the computer used to calculate the answer to the ultimate question is \"Earth\".".getBytes());
             zipOutput.write(entry);
             
@@ -97,18 +97,18 @@ public class CreateZipFileTest {
             
             ZipOutput zipOutput = new ZipOutput( outputFile);
             
-            CentralEntry entry = new CentralEntry( "answer.txt");
-            OutputStream entryOut = entry.getDataOutputStream();
+            ZioEntry entry = new ZioEntry( "answer.txt");
+            OutputStream entryOut = entry.getOutputStream();
             entryOut.write( "The answer to the ultimate question of life, the universe, and everything is 42.".getBytes());
             zipOutput.write(entry);
             
-            entry = new CentralEntry( "A.txt");
+            entry = new ZioEntry( "A.txt");
             entry.setCompression(0);
-            entryOut = entry.getDataOutputStream();
+            entryOut = entry.getOutputStream();
             entryOut.write( "The name of the computer used to calculate the answer to the ultimate question is \"Earth\".".getBytes());
             zipOutput.write(entry);
             
-            for (CentralEntry e : zipInput.centralEntries.values()) {
+            for (ZioEntry e : zipInput.zioEntries.values()) {
                 zipOutput.write(e);
             }
             

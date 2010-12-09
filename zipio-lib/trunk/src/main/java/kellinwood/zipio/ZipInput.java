@@ -37,8 +37,7 @@ public class ZipInput
     RandomAccessFile in = null;
     long fileLength;
 
-    Map<String,LocalEntry> localEntries = new LinkedHashMap<String,LocalEntry>();
-    Map<String,CentralEntry> centralEntries = new LinkedHashMap<String,CentralEntry>();
+    Map<String,ZioEntry> zioEntries = new LinkedHashMap<String,ZioEntry>();
     CentralEnd centralEnd;
     Manifest manifest;
 
@@ -50,7 +49,7 @@ public class ZipInput
     }
 
     private static LoggerInterface getLogger() {
-        if (log == null) log = LoggerManager.getLogger(LocalEntry.class.getName());
+        if (log == null) log = LoggerManager.getLogger(ZipInput.class.getName());
         return log;
     }
 
@@ -61,45 +60,68 @@ public class ZipInput
     }
     
     
-    public CentralEntry getEntry( String filename) {
-        return centralEntries.get(filename);
+    public ZioEntry getEntry( String filename) {
+        return zioEntries.get(filename);
     }
     
-    public Map<String,CentralEntry> getEntries() {
-        return centralEntries;
+    public Map<String,ZioEntry> getEntries() {
+        return zioEntries;
     }
     
     public Manifest getManifest() throws IOException {
         if (manifest == null) {
-            LocalEntry le = localEntries.get("META-INF/MANIFEST.MF");
-            if (le != null) {
-                manifest = new Manifest( le.getDataStream());
+            ZioEntry e = zioEntries.get("META-INF/MANIFEST.MF");
+            if (e != null) {
+                manifest = new Manifest( e.getInputStream());
             }
         }
         return manifest; 
     }
 
+    /** Scan the end of the file for the end of central directory record (EOCDR).
+        Returns the file offset of the EOCD signature.  The size parameter is an
+        initial buffer size (e.g., 256).
+     */
+    public long scanForEOCDR( int size) throws IOException {
+        if (size > fileLength || size > 65536) throw new IllegalStateException( "End of central directory not found in " + inputFilename);
+
+        int scanSize = (int)Math.min( fileLength, size);
+
+        byte[] scanBuf = new byte[scanSize];
+
+        in.seek( fileLength - scanSize);
+
+        in.readFully( scanBuf);
+
+        for (int i = scanSize - 4; i >= 0; i--) {
+            if (scanBuf[i] == 0x50 && scanBuf[i+1] == 0x4b && scanBuf[i+2] == 0x05 && scanBuf[i+3] == 0x06) {
+                return fileLength - scanSize + i;
+            }
+        }
+
+        return scanForEOCDR( size * 2);
+    }
+                              
+        
     private void doRead()
     {
         try {
 
-            LocalEntry localEntry = LocalEntry.read(this);
-            while (localEntry != null) {
-                if (localEntry.filename.equals("META-INF/MANIFEST.MF")) {
-
-                }
-                localEntries.put( localEntry.filename, localEntry);
-                localEntry = LocalEntry.read(this);
-            } 
-
-            CentralEntry centralEntry = CentralEntry.read(this);
-            while (centralEntry != null) {
-                centralEntry.localEntry = localEntries.get( centralEntry.filename);
-                centralEntries.put( centralEntry.filename, centralEntry);
-                centralEntry = CentralEntry.read(this);
-            } 
-
+            long posEOCDR = scanForEOCDR( 256);
+            in.seek( posEOCDR);
             centralEnd = CentralEnd.read( this);
+
+            in.seek( centralEnd.centralStartOffset);
+
+            for (int i = 0; i < centralEnd.totalCentralEntries; i++) {
+                ZioEntry entry = ZioEntry.read(this);
+                zioEntries.put( entry.getName(), entry);
+            }
+
+            for (ZioEntry entry : zioEntries.values()) {
+                entry.readLocalHeader();
+            }
+            
         }
         catch (Throwable t) {
             t.printStackTrace();

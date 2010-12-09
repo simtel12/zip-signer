@@ -62,7 +62,7 @@ public class BasicTest {
             assertEquals( 2, zipInput.getEntries().size());
             
             // Fetch an entry
-            CentralEntry entry = zipInput.getEntries().values().iterator().next();
+            ZioEntry entry = zipInput.getEntries().values().iterator().next();
             
             // Check setTime(), getTime() by using identity transform:  setTime(date), new Date(getTime()) == date
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

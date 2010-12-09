@@ -38,7 +38,7 @@ public class ZipOutput
     OutputStream out = null;
     int filePointer = 0;
 
-    List<CentralEntry> entriesWritten = new LinkedList<CentralEntry>();
+    List<ZioEntry> entriesWritten = new LinkedList<ZioEntry>();
     Set<String> namesWritten = new HashSet<String>();
     
     public ZipOutput( String filename) throws IOException
@@ -67,11 +67,11 @@ public class ZipOutput
     }
     
     private static LoggerInterface getLogger() {
-        if (log == null) log = LoggerManager.getLogger(LocalEntry.class.getName());
+        if (log == null) log = LoggerManager.getLogger(ZipOutput.class.getName());
         return log;
     }
 
-    public void write( CentralEntry entry) throws IOException {
+    public void write( ZioEntry entry) throws IOException {
         String entryName = entry.getName();
         if (namesWritten.contains( entryName)) {
             getLogger().warning("Skipping duplicate file in output: " + entryName);
@@ -91,7 +91,7 @@ public class ZipOutput
         centralEnd.centralStartOffset = (int)getFilePointer();
         centralEnd.numCentralEntries = centralEnd.totalCentralEntries = (short)entriesWritten.size();
         
-        for (CentralEntry entry : entriesWritten) {
+        for (ZioEntry entry : entriesWritten) {
             entry.write( this);
         }
         
