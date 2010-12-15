@@ -19,6 +19,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity android:name=".filebrowser.AndroidFileBrowser"
+                  android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="kellinwood.zipsigner.action.BROWSE_FILE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>        
     </application>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-sdk android:minSdkVersion="3" />

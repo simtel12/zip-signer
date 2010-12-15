@@ -52,11 +52,7 @@ public class AboutDialog
 
         dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        /*
-    	if (dialog.requestWindowFeature(Window.FEATURE_LEFT_ICON)) {
-    		dialog.setFeatureDrawable(Window.FEATURE_LEFT_ICON, this.getResources().getDrawable(R.drawable.icon));
-    	}
-         */
+
         dialog.setContentView(R.layout.about_dialog);
         // dialog.setTitle(R.string.start_timer_about_title);
         String versionTemplate = context.getString(R.string.AboutZipSignerVersionTemplate);

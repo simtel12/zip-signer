@@ -61,7 +61,30 @@
               android:textColor="#FFF"
               android:text="@string/AboutZipSignerCopyright"
               />      
-                                         
+    <TextView android:id="@+id/about_icon_attr_view"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:textSize="14sp"              
+              android:textColor="#FFF"
+              android:text="@string/AboutAppIconAttribution"
+              android:layout_marginTop="10px"
+              />     
+    <TextView android:id="@+id/about_fm_attr_view"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:textSize="14sp"              
+              android:textColor="#FFF"
+              android:text="@string/AboutFmAttribution"
+              android:layout_marginTop="10px"
+              />                    
+    <TextView android:id="@+id/about_fm_icons_attr_view"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:textSize="14sp"              
+              android:textColor="#FFF"
+              android:text="@string/AboutFmIconsAttribution"
+              android:layout_marginTop="10px"
+              />                                                            
     <Button android:id="@+id/AboutCloseButton" 
   	    	android:text="@string/CloseButtonLabel"
    		    android:layout_width="wrap_content" 

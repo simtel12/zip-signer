@@ -15,6 +15,7 @@
  */
 package kellinwood.zipsigner;
 
+import java.io.File;
 import java.net.URL;
 
 import kellinwood.zipsigner.R;
@@ -39,13 +40,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-/** Demo app for signing zip, apk, and/or jar files on an Android device. 
+/** App for signing zip, apk, and/or jar files on an Android device. 
  *  This activity allows the input/output files to be selected and shows
  *  how to invoke the ZipSignerActivity to perform the actual work.
  *  
- *  If you have ES File Explorer installed, then you can use the 'choose' and 
- *  'save as' buttons to select the input and output files using the explorer. 
- * */
+ */
 public class ZipPickerActivity extends Activity {
 
 
@@ -57,7 +56,7 @@ public class ZipPickerActivity extends Activity {
 
     private static final String PREFERENCE_IN_FILE = "input_file";
     private static final String PREFERENCE_OUT_FILE = "output_file";
-    
+
     AndroidLogger logger = null;
 
     /** Called when the activity is first created. */
@@ -84,7 +83,7 @@ public class ZipPickerActivity extends Activity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String inputFile = prefs.getString(PREFERENCE_IN_FILE, Environment.getExternalStorageDirectory().toString() + "/unsigned.zip");
         String outputFile = prefs.getString(PREFERENCE_IN_FILE, Environment.getExternalStorageDirectory().toString() + "/signed.zip");        
-        
+
         EditText inputText = (EditText)findViewById(R.id.InFileEditText);
         inputText.setText( inputFile); 
 
@@ -107,19 +106,28 @@ public class ZipPickerActivity extends Activity {
 
     }
 
+    private String getInputFilename() {
+        return ((EditText)findViewById(R.id.InFileEditText)).getText().toString();
+    }
+
+    private String getOutputFilename() {
+        return ((EditText)findViewById(R.id.OutFileEditText)).getText().toString();
+    }
+
     private void invokeZipSignerActivity() {
         try {
 
-            String inputFile = ((EditText)findViewById(R.id.InFileEditText)).getText().toString();
-            String outputFile = ((EditText)findViewById(R.id.OutFileEditText)).getText().toString();
+            String inputFile = getInputFilename();
+            String outputFile = getOutputFilename();
 
+            // Save the input,output file names to preferences
             SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(PREFERENCE_IN_FILE, inputFile);
             editor.putString(PREFERENCE_OUT_FILE, outputFile);            
             editor.commit();            
-            
-            // Refuse to do anything of the external storage device is not writeable (external storage = /sdcard).
+
+            // Refuse to do anything if the external storage device is not writable (external storage = /sdcard).
             if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(Environment.getExternalStorageState())) {
                 logger.error("ERROR: External storage is mounted read-only");
                 return;
@@ -226,6 +234,10 @@ public class ZipPickerActivity extends Activity {
             case REQUEST_CODE_SIGN_FILE:
                 logger.info("File signing CANCELED!");
                 break;
+            case REQUEST_CODE_PICK_FILE_TO_OPEN:
+                break;
+            case REQUEST_CODE_PICK_FILE_TO_SAVE:
+                break;                
             default:
                 logger.error("onActivityResult, RESULT_CANCELED, unknown requestCode " + requestCode);
                 break;
@@ -249,37 +261,35 @@ public class ZipPickerActivity extends Activity {
 
     }
 
-    private void openFile(){
-        try{
-            Intent intent = getIntent("com.estrongs.action.PICK_FILE",getString(R.string.FileManagerOpenButtonLabel));
-            startActivityForResult(intent, REQUEST_CODE_PICK_FILE_TO_OPEN);
+    private void launchFileBrowser( String reason, int requestCode)
+    {
+        try
+        {
+            String startPath = "/";
+            String inf = getInputFilename();
+            if (inf != null && inf.length() > 0) {
+                File f = new File( getInputFilename());
+                startPath = f.getParent();
+            }
+
+            Intent intent = new Intent("kellinwood.zipsigner.action.BROWSE_FILE");
+            intent.putExtra("startPath", startPath);
+            intent.putExtra("reason", reason);
+            startActivityForResult(intent, requestCode);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, R.string.ESNoFileManagerInstalled, 0).show();
+            Toast.makeText(this, e.getMessage(), 0).show();
         }
     }
+
+
+    private void openFile(){
+        launchFileBrowser( "select input", REQUEST_CODE_PICK_FILE_TO_OPEN);
+    }
+
 
     private void saveFile() {
-
-        Intent intent = getIntent("com.estrongs.action.PICK_FILE",getString(R.string.FileManagerSaveButtonLabel));
-        // Assign a path.
-        intent.setData(Uri.parse("file://" + Environment.getExternalStorageDirectory().toString() + "/"));
-
-        try {
-            startActivityForResult(intent, REQUEST_CODE_PICK_FILE_TO_SAVE);
-        } catch (ActivityNotFoundException e) {
-            // No compatible file manager was found.
-            Toast.makeText(this, getString(R.string.ESNoFileManagerInstalled),Toast.LENGTH_SHORT).show();
-        }
+        launchFileBrowser( "select output", REQUEST_CODE_PICK_FILE_TO_SAVE);
     }
 
 
-    private Intent getIntent(String action,String btnTitle){
-
-        Intent intent = new Intent(action);
-
-        if (btnTitle != null)
-            intent.putExtra("com.estrongs.intent.extra.BUTTON_TITLE", btnTitle);
-
-        return intent ;
-    }    
 }
