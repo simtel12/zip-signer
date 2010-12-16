@@ -82,7 +82,7 @@ public class ZipPickerActivity extends Activity {
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String inputFile = prefs.getString(PREFERENCE_IN_FILE, Environment.getExternalStorageDirectory().toString() + "/unsigned.zip");
-        String outputFile = prefs.getString(PREFERENCE_IN_FILE, Environment.getExternalStorageDirectory().toString() + "/signed.zip");        
+        String outputFile = prefs.getString(PREFERENCE_OUT_FILE, Environment.getExternalStorageDirectory().toString() + "/signed.zip");        
 
         EditText inputText = (EditText)findViewById(R.id.InFileEditText);
         inputText.setText( inputFile); 

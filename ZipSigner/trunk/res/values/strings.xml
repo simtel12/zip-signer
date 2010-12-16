@@ -18,7 +18,6 @@
 	<string name="AboutZipSignerDescription">Signs zip, apk, and/or jar files.</string>
 	<string name="AboutZipSignerAuthor">Author: Ken Ellinwood</string>
 	<string name="AboutZipSignerCopyright">Copyright 2010. All rights reserved.</string>
-	<string name="AboutAppIconAttribution">App icon derived from work by Greg at http://thatnetsite.com</string>
 	<string name="AboutFmAttribution">File browser source based on http://www.anddev.org/android_filebrowser__v20-t101.html</string>
 	<string name="AboutFmIconsAttribution">File browser icons obtained from the Tango Icon Gallery, http://tango.freedesktop.org</string>
 	

@@ -60,15 +60,7 @@
               android:textSize="14sp"              
               android:textColor="#FFF"
               android:text="@string/AboutZipSignerCopyright"
-              />      
-    <TextView android:id="@+id/about_icon_attr_view"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:textSize="14sp"              
-              android:textColor="#FFF"
-              android:text="@string/AboutAppIconAttribution"
-              android:layout_marginTop="10px"
-              />     
+              />                                   
     <TextView android:id="@+id/about_fm_attr_view"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
