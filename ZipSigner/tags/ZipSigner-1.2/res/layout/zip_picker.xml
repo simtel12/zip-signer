@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:padding="10px"
+    >
+
+
+
+<TextView android:text="@string/InputZipLabel" 
+          android:id="@+id/InputZipTextView" 
+          android:layout_width="wrap_content" 
+          android:layout_height="wrap_content"
+          android:textSize="18sp"
+          android:textStyle="bold"
+          ></TextView>
+          
+<EditText android:text="/sdcard/test_unsigned_input.zip" 
+          android:id="@+id/InFileEditText" 
+          android:layout_width="fill_parent" 
+          android:layout_height="wrap_content"></EditText>
+          
+<Button android:text="@string/OpenPickButtonLabel" 
+        android:id="@+id/OpenPickButton" 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content"></Button>
+          
+          
+<LinearLayout 
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20px"
+    >          
+    <TextView android:text="@string/SignedZipLabel" 
+              android:id="@+id/SignedZipTextView" 
+              android:layout_width="wrap_content" 
+              android:layout_height="wrap_content"
+              android:textSize="18sp"
+              android:textStyle="bold"              
+              ></TextView>
+              
+    <EditText android:text="/sdcard/test_signed.zip" 
+          android:id="@+id/OutFileEditText" 
+          android:layout_width="fill_parent" 
+          android:layout_height="wrap_content"></EditText>
+          
+    <Button android:text="@string/SaveAsPickButtonLabel" 
+        android:id="@+id/SaveAsPickButton" 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content"></Button>
+
+</LinearLayout>
+
+<LinearLayout 
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="30px"
+    >          
+                  
+<Button android:text="@string/SignButtonLabel" 
+        android:id="@+id/SignButton" 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content"></Button>
+        
+</LinearLayout>
+
+</LinearLayout>
