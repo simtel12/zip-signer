@@ -5,7 +5,10 @@ import kellinwood.zipsigner.R;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 
@@ -89,14 +92,31 @@ public class AndroidFileBrowser extends ListActivity {
             this.browseTo(this.currentDirectory.getParentFile());
     }
 
+    // Comparator that will order directory entries with folders first, then files, all sorted case-insensitively.
+    static class FileSorter implements Comparator<File> {
+
+        @Override
+        public int compare(File o1, File o2) {
+            if (o1.isDirectory() && !o2.isDirectory()) return -1;
+            else if (!o1.isDirectory() && o2.isDirectory()) return 1;
+            else return o1.getName().compareToIgnoreCase(o2.getName());
+        }
+        
+    }
+    
+    private static FileSorter fileSorter = new FileSorter();
+    
     private void browseTo(final File aDirectory){
 
         if (aDirectory.isDirectory()) 
         {
             setTitle(aDirectory.getAbsolutePath() + " :: " + getString(R.string.app_name) + " - " + reason);            
-            File[] files = aDirectory.listFiles();
-            if (files == null) files = emptyDirFiles;
+            File[] fileArray = aDirectory.listFiles();
+            if (fileArray == null) fileArray = emptyDirFiles;
             this.currentDirectory = aDirectory;
+            
+            Set<File> files = new TreeSet<File>( fileSorter);
+            for (File f : fileArray) files.add(f);
             fill( files);
         }
         else {
@@ -117,7 +137,7 @@ public class AndroidFileBrowser extends ListActivity {
         }
     }
 
-    private void fill(File[] files) {
+    private void fill(Set<File> files) {
         this.directoryEntries.clear();
 
         String currentDirectoryName = currentDirectory.getAbsolutePath();
@@ -171,7 +191,6 @@ public class AndroidFileBrowser extends ListActivity {
             this.directoryEntries.add(new IconifiedText( currentFileName, currentIcon));
 
         }
-        Collections.sort(this.directoryEntries);
 
         IconifiedTextListAdapter itla = new IconifiedTextListAdapter(this);
         itla.setListItems(this.directoryEntries);		
