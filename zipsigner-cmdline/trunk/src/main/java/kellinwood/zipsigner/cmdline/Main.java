@@ -52,16 +52,16 @@ public class Main
         HelpFormatter formatter = new HelpFormatter();
 
         formatter.printHelp(140,
-            "ZipSignerCmdline [options] <input.zip> <output.zip>",
-            "Sign the input file and write the result to the given output file\n",
-            options, "");
+                "ZipSignerCmdline [options] <input.zip> <output.zip>",
+                "Sign the input file and write the result to the given output file\n",
+                options, "");
 
         System.exit(1);
     }
-	
+
     public static void main( String[] args) {
-    	try {
-    		
+        try {
+
             Options options = new Options();
             CommandLine cmdLine = null;
             Option helpOption =  new Option("h", "help", false, "Display usage information");
@@ -80,7 +80,7 @@ public class Main
 
             Option sbtOption = new Option("t", "template", false, "Signature block template file");
             sbtOption.setArgs( 1);
-            
+
             options.addOption( helpOption);
             options.addOption( providerOption);
             options.addOption( keyOption);
@@ -108,16 +108,16 @@ public class Main
             log4jProperties.load ( new FileReader( "log4j.properties" ));
             PropertyConfigurator.configure( log4jProperties);
             LoggerManager.setLoggerFactory( new Log4jLoggerFactory());
-    		
+
             List<String> argList = cmdLine.getArgList();
             if (argList.size() != 2) usage(options);
-            
+
             // LoggerInterface logger = LoggerManager.getLogger(Main.class.getName());
 
             ZipSigner signer = new ZipSigner();
-            
+
             if (cmdLine.hasOption( providerOption.getOpt())) {
-            	signer.loadProvider( providerOption.getValue());
+                signer.loadProvider( providerOption.getValue());
             }
 
             PrivateKey privateKey = null;            
@@ -144,7 +144,7 @@ public class Main
                 URL certUrl = new File( certOption.getValue()).toURI().toURL();
                 cert = signer.readPublicKey( certUrl);
             }
-                
+
             byte[] sigBlockTemplate = null;
             if (cmdLine.hasOption( sbtOption.getOpt())) {
                 URL sbtUrl = new File( sbtOption.getValue()).toURI().toURL();
@@ -153,11 +153,11 @@ public class Main
 
             if (privateKey == null) signer.signZip( argList.get(0), argList.get(1));
             else signer.signZip( cert, privateKey, sigBlockTemplate, argList.get(0), argList.get(1));
-    	}
-    	catch (Throwable t) {
-    		t.printStackTrace();
-    	}
+        }
+        catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
-    
+
 
 }
