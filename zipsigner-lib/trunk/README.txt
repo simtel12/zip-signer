@@ -18,6 +18,11 @@ DEPENDENCIES
 
 This project currently depends on other libraries:
 
+- zipio-lib, an alternate API to java.util.zip.* for reading and
+  writing zip files.  This library allows entries to be copied
+  directly from the input to output without de-compressing and 
+  re-compressing.  It also zip-aligns to 4 byte boundaries by default.
+  
 - kellinwood-logging-lib, a small platform-independent logging
   framework.  In order to troubleshoot during development I needed to
   have zipsigner-lib run on both Android and my desktop JRE so I could
@@ -39,6 +44,10 @@ This project currently depends on other libraries:
   library was obtained from the OpenJDK project and is licensed under
   GPL version 2.
 
+- For use in normal desktop JRE applications, you must install Bouncy 
+  Castle Crypto API.  http://www.bouncycastle.org/java.html.  The BC 
+  cryto provider is the default on Android, but not in other environments
+  that support the Java programming language.
 
 SOURCE
 
