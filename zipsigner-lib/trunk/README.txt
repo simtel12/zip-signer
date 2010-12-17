@@ -81,13 +81,15 @@ catch (Throwable t) {
 GETTING PROGRESS UPDATES:
 
 import kellinwood.security.zipsigner.ProgressListener;
+import kellinwood.security.zipsigner.ProgressEvent;
 
 ZipSigner zipSigner = new ZipSigner();
 zipSigner.addProgressListener( new ProgressListener() {
-   public void onProgress( String currentItem, int percentDone)
+   public void onProgress( ProgressEvent event)
    {
-       // Current item is the basename of a file in the zip being signed.
-       // percentDone is a value between 0 and 100
+      String message = event.getMessage();
+      int percentDone = event.getPercentDone();
+      // log output or update the display here       
    }
 });
 zipSigner.signZip( inputFile, outputFile);
