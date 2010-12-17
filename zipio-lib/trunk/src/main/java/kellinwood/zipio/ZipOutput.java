@@ -95,7 +95,7 @@ public class ZipOutput
             entry.write( this);
         }
         
-        centralEnd.centralDirectorySize = (short)(getFilePointer() - centralEnd.centralStartOffset);
+        centralEnd.centralDirectorySize = (int)(getFilePointer() - centralEnd.centralStartOffset);
         centralEnd.fileComment = "";
         
         centralEnd.write( this);
@@ -141,6 +141,11 @@ public class ZipOutput
         filePointer += value.length;
     }
 
+    public void writeBytes( byte[] value, int offset, int length) throws IOException {
+
+        out.write( value, offset, length);
+        filePointer += length;
+    }    
 
 }
 

@@ -45,17 +45,20 @@ public class ZioEntry {
     private int size;
     private String filename;
     private byte[] extraData;
+    private short numAlignBytes = 0;
     private String fileComment;
     private short diskNumberStart;
     private short internalAttributes;
     private int externalAttributes;
     
     private int localHeaderOffset;
-    private long dataPosition;
+    private long dataPosition = -1;
     private byte[] data = null;
     private EntryOutputStream entryOut = null;
     
 
+    private static byte[] alignBytes = new byte[4];
+    
     private static LoggerInterface log;
 
     public ZioEntry( ZipInput input) {
@@ -140,8 +143,7 @@ public class ZioEntry {
         filename = input.readString(fileNameLen);
         if (debug) log.debug("Filename: " + filename);
 
-        // Throw away extra data from local header.  Zip alignment causes it to be different from the
-        // central header and we always write zip-aligned anyway.
+        // Throw away extra data from local header.
         byte[] extra = input.readBytes( extraLen);
 
         // Record the file position of this entry's data.
@@ -164,10 +166,18 @@ public class ZioEntry {
 
     public void writeLocalEntry( ZipOutput output) throws IOException
     {
+        if (data == null && dataPosition < 0 && zipInput != null) {
+            readLocalHeader();
+        }
+        
         localHeaderOffset = (int)output.getFilePointer();
 
         boolean debug = getLogger().isDebugEnabled();
-
+        
+        if (debug) {
+            getLogger().debug( String.format("Local header at 0x%08x - %s", localHeaderOffset, filename));
+        }
+        
         if (entryOut != null) {
             entryOut.close();
             size = entryOut.getSize();
@@ -187,7 +197,7 @@ public class ZioEntry {
         output.writeInt( size);
         output.writeShort( (short)filename.length());
 
-        short numAlignBytes = 0;
+        numAlignBytes = 0;
 
         // Zipalign if the file is uncompressed, i.e., "Stored", and file size is not zero.
         if (compression == 0 && size > 0) {
@@ -204,6 +214,7 @@ public class ZioEntry {
             }
         }
 
+        
         // 28 	2 	Extra field length (m)
         output.writeShort( (short)(extraData.length + numAlignBytes));
 
@@ -215,24 +226,30 @@ public class ZioEntry {
 
         // Zipalign bytes
         if (numAlignBytes > 0) {
-            byte[] alignBytes = new byte[numAlignBytes];
-            output.writeBytes( alignBytes);
+            output.writeBytes( alignBytes, 0, numAlignBytes);
         }
 
+        if (debug) getLogger().debug(String.format("Data position 0x%08x", output.getFilePointer()));
         if (data != null) {
             output.writeBytes( data);
+            if (debug) getLogger().debug(String.format("Wrote %d bytes", data.length));
         }
         else {
-            zipInput.seek( dataPosition);
 
+            zipInput.seek( dataPosition);
+            
             int bufferSize = Math.min( compressedSize, 8096);
             byte[] buffer = new byte[bufferSize];
             long totalCount = 0;
             
             while (totalCount != compressedSize) {
                 int numRead = zipInput.in.read( buffer, 0, (int)Math.min( compressedSize -  totalCount, bufferSize));  
-                output.out.write(buffer, 0, numRead);
-                totalCount += numRead;
+                if (numRead > 0) {
+                    output.writeBytes(buffer, 0, numRead);
+                    if (debug) getLogger().debug(String.format("Wrote %d bytes", numRead));
+                    totalCount += numRead;
+                }
+                else throw new IllegalStateException(String.format("EOF reached while copying %s with %d bytes left to go", filename, compressedSize -  totalCount));
             }
         }
     }		
@@ -329,6 +346,9 @@ public class ZioEntry {
 
         fileComment = input.readString( fileCommentLen);
         if (debug) log.debug("File comment: " + fileComment);
+        
+        // dataPosition = localHeaderOffset + 30 + filename.length() + extraData.length;
+        // if (debug) log.debug(String.format("Data position: 0x%08x", dataPosition));
 
     }
 
@@ -349,11 +369,22 @@ public class ZioEntry {
 
     // Returns an input stream for reading the entry's data. 
     public InputStream getInputStream() throws IOException {
-        InputStream result;
-        result = new ZioEntryInputStream(this);
-        if (compression != 0)  result = new InflaterInputStream( result, new Inflater( true));
+        return getInputStream(null);
+    }
 
-        return result;
+    // Returns an input stream for reading the entry's data. 
+    public InputStream getInputStream(OutputStream monitorStream) throws IOException {
+        ZioEntryInputStream dataStream;
+        dataStream = new ZioEntryInputStream(this);
+        if (monitorStream != null) dataStream.setMonitorStream( monitorStream);
+        if (compression != 0)  {
+            // Note: When using nowrap=true with Inflater it is also necessary to provide 
+            // an extra "dummy" byte as input. This is required by the ZLIB native library 
+            // in order to support certain optimizations.
+            dataStream.setReturnDummyByte(true);
+            return new InflaterInputStream( dataStream, new Inflater( true));
+        }
+        else return dataStream;
     }
 
     // Returns an output stream for writing an entry's data.
@@ -434,17 +465,17 @@ public class ZioEntry {
         output.writeInt( compressedSize);
         output.writeInt( size);
         output.writeShort( (short)filename.length());
-        output.writeShort( (short)extraData.length);
+        output.writeShort( (short)(extraData.length + numAlignBytes));
         output.writeShort( (short)fileComment.length());
         output.writeShort( diskNumberStart);
         output.writeShort( internalAttributes);
         output.writeInt( externalAttributes);
         output.writeInt( localHeaderOffset);
-
+        
         output.writeString( filename);
         output.writeBytes( extraData);
+        if (numAlignBytes > 0) output.writeBytes( alignBytes, 0, numAlignBytes);
         output.writeString( fileComment);
-
 
     }
 

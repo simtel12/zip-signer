@@ -18,9 +18,13 @@ package kellinwood.zipio;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.jar.Manifest;
+
 
 import kellinwood.logging.LoggerInterface;
 import kellinwood.logging.LoggerManager;
@@ -36,6 +40,7 @@ public class ZipInput
     public String inputFilename;
     RandomAccessFile in = null;
     long fileLength;
+    int scanIterations = 0;
 
     Map<String,ZioEntry> zioEntries = new LinkedHashMap<String,ZioEntry>();
     CentralEnd centralEnd;
@@ -93,7 +98,8 @@ public class ZipInput
 
         in.readFully( scanBuf);
 
-        for (int i = scanSize - 4; i >= 0; i--) {
+        for (int i = scanSize - 22; i >= 0; i--) {
+            scanIterations += 1;
             if (scanBuf[i] == 0x50 && scanBuf[i+1] == 0x4b && scanBuf[i+2] == 0x05 && scanBuf[i+3] == 0x06) {
                 return fileLength - scanSize + i;
             }
@@ -110,17 +116,43 @@ public class ZipInput
             long posEOCDR = scanForEOCDR( 256);
             in.seek( posEOCDR);
             centralEnd = CentralEnd.read( this);
+            DateFormat dateFormat = null;
 
-            in.seek( centralEnd.centralStartOffset);
+            boolean debug = getLogger().isDebugEnabled();
+            if (debug) {
+                getLogger().debug(String.format("EOCD found in %d iterations", scanIterations));
+                getLogger().debug(String.format("Directory entries=%d, size=%d, offset=%d/0x%08x", centralEnd.totalCentralEntries,
+                                                centralEnd.centralDirectorySize, centralEnd.centralStartOffset, centralEnd.centralStartOffset));
+
+                getLogger().debug(" Length   Method    Size  Ratio   Date   Time   CRC-32    Name");
+                getLogger().debug("--------  ------  ------- -----   ----   ----   ------    ----");
+                dateFormat = new SimpleDateFormat("MM-dd-yy HH:mm");
+            }
+
+            in.seek( centralEnd.centralStartOffset);            
 
             for (int i = 0; i < centralEnd.totalCentralEntries; i++) {
                 ZioEntry entry = ZioEntry.read(this);
                 zioEntries.put( entry.getName(), entry);
+                if (debug) {
+                    int ratio = 0;
+                    if (entry.getSize() > 0) ratio = (100 * (entry.getSize() - entry.getCompressedSize())) / entry.getSize();
+                    getLogger().debug(String.format("%8d  %6s %8d %4d%% %s  %08x  %s",
+                                             entry.getSize(),
+                                             entry.getCompression() == 0 ? "Stored" : "Defl:N",
+                                             entry.getCompressedSize(),
+                                             ratio,
+                                             dateFormat.format( new Date( entry.getTime())),
+                                             entry.getCrc32(),
+                                             entry.getName()));
+                }
             }
 
+            /*
             for (ZioEntry entry : zioEntries.values()) {
                 entry.readLocalHeader();
             }
+            */
             
         }
         catch (Throwable t) {
