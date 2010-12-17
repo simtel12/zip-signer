@@ -17,7 +17,7 @@
 
 /* This file is a heavily modified version of com.android.signapk.SignApk.java.
  * The changes include:
- *   - addition of the signZip() convinience methods
+ *   - addition of the signZip() convenience methods
  *   - addition of a progress listener interface
  *   - removal of main()
  *   - switch to a signature generation method that verifies
@@ -87,7 +87,8 @@ public class ZipSigner
 
     private int progressTotalItems = 0;
     private int progressCurrentItem = 0;
-
+    private ProgressEvent progressEvent = new ProgressEvent();
+    
     static LoggerInterface log = null;
 
     private static final String CERT_SF_NAME = "META-INF/CERT.SF";
@@ -251,6 +252,7 @@ public class ZipSigner
                      !stripPattern.matcher(name).matches()))
             {
 
+                progress( ProgressEvent.PRORITY_NORMAL, "Generating manifest");
                 InputStream data = entry.getInputStream();
                 while ((num = data.read(buffer)) > 0) {
                     md.update(buffer, 0, num);
@@ -293,6 +295,7 @@ public class ZipSigner
         Map<String, Attributes> entries = manifest.getEntries();
         for (Map.Entry<String, Attributes> entry : entries.entrySet()) {
             if (canceled) break;
+            progress( ProgressEvent.PRORITY_NORMAL, "Generating signature file");
             // Digest of the manifest stanza for this entry.
             String nameEntry = "Name: " + entry.getKey() + "\r\n"; 
             print.print( nameEntry);
@@ -309,6 +312,7 @@ public class ZipSigner
     }
 
     /** Write a .RSA file with a digital signature. */
+    @SuppressWarnings("unchecked")
     private void writeSignatureBlock( byte[] signatureBlockTemplate,
             byte[] signatureBytes, X509Certificate publicKey, OutputStream out)
     throws IOException, GeneralSecurityException
@@ -348,9 +352,11 @@ public class ZipSigner
         Map<String, Attributes> entries = manifest.getEntries();
         List<String> names = new ArrayList<String>(entries.keySet());
         Collections.sort(names);
+        int i = 1;
         for (String name : names) {
             if (canceled) break;
-            progress( name);
+            progress( ProgressEvent.PRORITY_NORMAL, String.format("Copying zip entry %d of %d", i, names.size()));
+            i += 1;
             ZioEntry inEntry = input.get(name);
             inEntry.setTime(timestamp);
             output.write(inEntry);
@@ -439,6 +445,10 @@ public class ZipSigner
             throw new IllegalArgumentException("Input and output filenames are the same.  Specify a different name for the output.");
         }        
         
+        progressTotalItems = 1000;
+        progressCurrentItem = 0;
+        progress( ProgressEvent.PRORITY_IMPORTANT, "Parsing the input's central directory");
+        
         ZipInput input = ZipInput.read( inputZipFilename);
         signZip( publicKey, privateKey, signatureBlockTemplate, input.getEntries(), outputZipFilename);
     }
@@ -464,11 +474,23 @@ public class ZipSigner
 
             zipOutput = new ZipOutput( outputZipFilename);
 
-            initProgress( zioEntries.size()+3); // num entries + MANIFEST.MF, CERT.SF, CERT.RSA
+            this.progressTotalItems = 0;
+            for (ZioEntry entry: zioEntries.values()) {
+                String name = entry.getName();
+                if (!entry.isDirectory() && !name.equals(JarFile.MANIFEST_NAME) &&
+                        !name.equals(CERT_SF_NAME) && !name.equals(CERT_RSA_NAME) &&
+                        (stripPattern == null ||
+                                !stripPattern.matcher(name).matches()))
+                {
+                    progressTotalItems += 3;  // digest for manifest, digest in sig file, copy data
+                }
+            }
+            progressTotalItems += 1; // CERT.RSA generation
+            progressCurrentItem = 0;
 
 
             // MANIFEST.MF
-            progress(JarFile.MANIFEST_NAME);
+            // progress(ProgressEvent.PRORITY_NORMAL, JarFile.MANIFEST_NAME);
             Manifest manifest = addDigestsToManifest(zioEntries);
             if (canceled) return;
             ZioEntry ze = new ZioEntry( JarFile.MANIFEST_NAME);
@@ -478,7 +500,7 @@ public class ZipSigner
             
 
             // CERT.SF
-            progress( CERT_SF_NAME);
+            // progress( ProgressEvent.PRORITY_NORMAL, CERT_SF_NAME);
 
             // Can't use default Signature on Android.  Although it generates a signature that can be verified by jarsigner,
             // the recovery program appears to require a specific algorithm/mode/padding.  So we use the custom ZipSignature instead.
@@ -547,7 +569,7 @@ public class ZipSigner
             }
 
             // CERT.RSA
-            progress( CERT_RSA_NAME);
+            progress( ProgressEvent.PRORITY_NORMAL, "Generating signature block file");
             ze = new ZioEntry(CERT_RSA_NAME);
             ze.setTime(timestamp);
             writeSignatureBlock(signatureBlockTemplate, signatureBytes, publicKey, ze.getOutputStream());
@@ -573,16 +595,7 @@ public class ZipSigner
     }
 
 
-    private void initProgress( int totalItems) {
-        progressTotalItems = totalItems;
-        progressCurrentItem = 0;
-    }
-
-    private void progress( String itemName) {
-
-        // Create short version of item name
-        int pos = itemName.lastIndexOf('/');
-        if (pos >= 0) itemName = itemName.substring( pos+1);
+    private void progress( int priority, String itemName) {
 
         progressCurrentItem += 1;
 
@@ -590,12 +603,16 @@ public class ZipSigner
 
         // Notify listeners here
         for (ProgressListener listener : listeners) {
-            listener.onProgress( itemName, percentDone);
+            progressEvent.setMessage(itemName);
+            progressEvent.setPercentDone(percentDone);
+            progressEvent.setPriority(priority);
+            listener.onProgress( progressEvent);
         }
     }
 
     private ArrayList<ProgressListener> listeners = new ArrayList<ProgressListener>();
 
+    @SuppressWarnings("unchecked")
     public synchronized void addProgressListener( ProgressListener l)
     {
         ArrayList<ProgressListener> list = (ArrayList<ProgressListener>)listeners.clone();
@@ -603,6 +620,7 @@ public class ZipSigner
         listeners = list;
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized void removeProgressListener( ProgressListener l)
     {
         ArrayList<ProgressListener> list = (ArrayList<ProgressListener>)listeners.clone();
