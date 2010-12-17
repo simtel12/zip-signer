@@ -4,7 +4,7 @@
 
 App for signing Zip, Apk, and/or Jar files onboard Android devices.
 
-== Features ==
+==Features==
   * Integrated file browser for picking input and output files.
   * Works without root permissions, although you'll need root to do something with the results.
   * Output files are also automatically zip-aligned.
