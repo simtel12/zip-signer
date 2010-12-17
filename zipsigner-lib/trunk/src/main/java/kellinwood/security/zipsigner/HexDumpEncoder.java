@@ -24,7 +24,8 @@ import java.io.ByteArrayOutputStream;
 /** Produces the classic hex dump with an address column, hex data
  * section (16 bytes per row) and right-column printable character dislpay.
  */    
-public class HexDumpEncoder {
+public class HexDumpEncoder
+{
 
     static HexEncoder encoder = new HexEncoder();
 
@@ -69,4 +70,5 @@ public class HexDumpEncoder {
             throw new IllegalStateException( x.getClass().getName() + ": " + x.getMessage());
         }
     }
+
 }

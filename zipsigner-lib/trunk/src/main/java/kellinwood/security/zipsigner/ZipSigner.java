@@ -213,11 +213,12 @@ public class ZipSigner
     private Manifest addDigestsToManifest(Map<String,ZioEntry> entries)
         throws IOException, GeneralSecurityException 
     {
+        Manifest input = null;
         ZioEntry manifestEntry = entries.get(JarFile.MANIFEST_NAME);
-
-        if (manifestEntry == null) throw new IllegalStateException("Not found: " + JarFile.MANIFEST_NAME);
-        java.util.jar.Manifest input = new Manifest();
-        input.read( manifestEntry.getInputStream());
+        if (manifestEntry != null) {
+            input = new Manifest();
+            input.read( manifestEntry.getInputStream());
+        }
         Manifest output = new Manifest();
         Attributes main = output.getMainAttributes();
         if (input != null) {
@@ -229,7 +230,7 @@ public class ZipSigner
 
         // BASE64Encoder base64 = new BASE64Encoder();
         MessageDigest md = MessageDigest.getInstance("SHA1");
-        byte[] buffer = new byte[4096];
+        byte[] buffer = new byte[512];
         int num;
 
         // We sort the input entries by name, and add them to the
@@ -247,12 +248,14 @@ public class ZipSigner
             if (!entry.isDirectory() && !name.equals(JarFile.MANIFEST_NAME) &&
                     !name.equals(CERT_SF_NAME) && !name.equals(CERT_RSA_NAME) &&
                     (stripPattern == null ||
-                            !stripPattern.matcher(name).matches())) {
+                     !stripPattern.matcher(name).matches()))
+            {
+
                 InputStream data = entry.getInputStream();
                 while ((num = data.read(buffer)) > 0) {
                     md.update(buffer, 0, num);
                 }
-
+                    
                 Attributes attr = null;
                 if (input != null) {
                     java.util.jar.Attributes inAttr = input.getAttributes(name); 
