@@ -24,6 +24,7 @@ import kellinwood.zipsigner.R;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
 import kellinwood.logging.android.AndroidLoggerFactory;
+import kellinwood.security.zipsigner.ProgressEvent;
 import kellinwood.security.zipsigner.ZipSigner;
 import kellinwood.security.zipsigner.ProgressListener;
 
@@ -232,17 +233,17 @@ public class ZipSignerActivity extends Activity {
             @param percentDone a value between 0 and 100 indicating 
             percent complete.
          */
-        public void onProgress( String currentItem, int percentDone)
+        public void onProgress( ProgressEvent event)
         {
             long currentTime = System.currentTimeMillis();
 
             // Update progress at most twice a second but always display 100%.
-            if (percentDone == 100 || (currentTime - lastProgressTime) >= 500)
+            if (event.getPercentDone() == 100 || event.getPriority() > ProgressEvent.PRORITY_NORMAL || (currentTime - lastProgressTime) >= 500)
             {
                 if (showProgressItems)
-                    sendMessage( MESSAGE_TYPE_PERCENT_DONE, percentDone, CURRENT_ITEM_NAME, currentItem);
+                    sendMessage( MESSAGE_TYPE_PERCENT_DONE, event.getPercentDone(), CURRENT_ITEM_NAME, event.getMessage());
                 else
-                    sendMessage( MESSAGE_TYPE_PERCENT_DONE, percentDone, null, null);
+                    sendMessage( MESSAGE_TYPE_PERCENT_DONE, event.getPercentDone(), null, null);
 
                 lastProgressTime = currentTime;
             }
