@@ -151,8 +151,8 @@ public class Main
                 sigBlockTemplate = signer.readContentAsBytes( sbtUrl);
             }
 
-            if (privateKey == null) signer.signZip( argList.get(0), argList.get(1));
-            else signer.signZip( cert, privateKey, sigBlockTemplate, argList.get(0), argList.get(1));
+            signer.setKeys( cert, privateKey, sigBlockTemplate);
+            signer.signZip( argList.get(0), argList.get(1));
         }
         catch (Throwable t) {
             t.printStackTrace();
