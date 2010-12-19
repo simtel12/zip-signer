@@ -31,6 +31,7 @@ package kellinwood.security.zipsigner;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -98,7 +99,14 @@ public class ZipSigner
     private static Pattern stripPattern =
         Pattern.compile("^META-INF/(.*)[.](SF|RSA|DSA)$");
 
+    // private key
+    PrivateKey privateKey = null; 
 
+    // certificate
+    X509Certificate publicKey = null;
+
+    // signature block template
+    byte[] sigBlockTemplate = null;
 
     // Allow the operation to be canceled.
     public void cancel() {
@@ -393,87 +401,96 @@ public class ZipSigner
             X509Certificate publicKey = (X509Certificate)cert;
             Key key = keystore.getKey(certAlias, certPw.toCharArray());
             PrivateKey privateKey = (PrivateKey)key;
+            
+            setKeys( publicKey, privateKey, null);
 
-            signZip( publicKey, privateKey, inputZipFilename, outputZipFilename);
+            signZip( inputZipFilename, outputZipFilename);
         }
         finally {
             if (keystoreStream != null) keystoreStream.close();
         }
     }
 
+    public void loadKeys( String name)
+        throws IOException, GeneralSecurityException
+    {
+        progress(ProgressEvent.PRORITY_IMPORTANT, "Loading certificate and private key");
+        
+        // load the default private key
+        URL privateKeyUrl = getClass().getResource("/keys/"+name+".pk8");
+        privateKey = readPrivateKey(privateKeyUrl, null);
+
+        // load the default certificate
+        URL publicKeyUrl = getClass().getResource("/keys/"+name+".x509.pem");
+        publicKey = readPublicKey(publicKeyUrl);
+
+        // load the default signature block template
+        URL sigBlockTemplateUrl = getClass().getResource("/keys/"+name+".sbt");
+        if (sigBlockTemplateUrl != null) sigBlockTemplate = readContentAsBytes(sigBlockTemplateUrl);
+
+    }
+    
+    public void setKeys( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate)
+    {
+        this.publicKey = publicKey;
+        this.privateKey = privateKey;
+        this.sigBlockTemplate = signatureBlockTemplate;
+    }
+    
+
     /** Sign the input with the default test key and certificate.  
      *  Save result to output file.
      */
-    public void signZip( String inputZipFilename, String outputZipFilename)
-    throws IOException, GeneralSecurityException
+    public void signZip( Map<String,ZioEntry> zioEntries, String outputZipFilename)
+        throws IOException, GeneralSecurityException
     {
-        // load the default private key
-        URL privateKeyUrl = getClass().getResource("/keys/testkey.pk8");
-        PrivateKey privateKey = readPrivateKey(privateKeyUrl, null);
-
-        // load the default certificate
-        URL publicKeyUrl = getClass().getResource("/keys/testkey.x509.pem");
-        X509Certificate publicKey = readPublicKey(publicKeyUrl);
-
-        // load the default signature block template
-        URL sigBlockTemplateUrl = getClass().getResource("/keys/testkey.sbt");
-        byte[] sigBlockTemplate = readContentAsBytes(sigBlockTemplateUrl);
-
-        signZip( publicKey, privateKey, sigBlockTemplate, inputZipFilename, outputZipFilename);
+        initProgress();        
+        signZip( zioEntries, new FileOutputStream(outputZipFilename), outputZipFilename);
     }
-
-    /** Sign the file using the given public key cert and private key.  When using this metho
-     *  android-sun-jarsign-support.jar must be in the classpath.
-     */
-    public void signZip( X509Certificate publicKey, PrivateKey privateKey,
-            String inputZipFilename, String outputZipFilename)
-    throws IOException, GeneralSecurityException
-    {
-        signZip( publicKey, privateKey, null, inputZipFilename, outputZipFilename);
-    }
+    
 
     /** Sign the file using the given public key cert, private key,
      *  and signature block template.  The signature block template
      *  parameter may be null, but if so
      *  android-sun-jarsign-support.jar must be in the classpath.
      */
-    public void signZip( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate,
-            String inputZipFilename, String outputZipFilename)
-    throws IOException, GeneralSecurityException
+    public void signZip( String inputZipFilename, String outputZipFilename)
+        throws IOException, GeneralSecurityException
     {
         if (inputZipFilename.equals( outputZipFilename)) {
             throw new IllegalArgumentException("Input and output filenames are the same.  Specify a different name for the output.");
         }        
-        
-        progressTotalItems = 1000;
-        progressCurrentItem = 0;
+
+        initProgress();
+        if (privateKey == null) loadKeys("testkey");
         progress( ProgressEvent.PRORITY_IMPORTANT, "Parsing the input's central directory");
         
         ZipInput input = ZipInput.read( inputZipFilename);
-        signZip( publicKey, privateKey, signatureBlockTemplate, input.getEntries(), outputZipFilename);
+        signZip( input.getEntries(), new FileOutputStream( outputZipFilename), outputZipFilename);
     }
     
-    /** Sign the file using the given public key cert, private key,
+    /** Sign the 
      *  and signature block template.  The signature block template
      *  parameter may be null, but if so
      *  android-sun-jarsign-support.jar must be in the classpath.
      */
-    public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
-            byte[] signatureBlockTemplate,
-            Map<String,ZioEntry> zioEntries, String outputZipFilename)
+    public void signZip( Map<String,ZioEntry> zioEntries, OutputStream outputStream, String outputZipFilename)
         throws IOException, GeneralSecurityException    
     {
         canceled = false;
+        
+        initProgress();
+        if (privateKey == null) loadKeys("testkey");
 
         ZipOutput zipOutput = null;
-        log = LoggerManager.getLogger( ZipSigner.class.getName());
 
         try {
             // Assume the certificate is valid for at least an hour.
             long timestamp = publicKey.getNotBefore().getTime() + 3600L * 1000;
 
-            zipOutput = new ZipOutput( outputZipFilename);
+            zipOutput = new ZipOutput( outputStream);
 
+            // Calculate total steps to complete for accurate progress percentages.
             this.progressTotalItems = 0;
             for (ZioEntry entry: zioEntries.values()) {
                 String name = entry.getName();
@@ -572,7 +589,7 @@ public class ZipSigner
             progress( ProgressEvent.PRORITY_NORMAL, "Generating signature block file");
             ze = new ZioEntry(CERT_RSA_NAME);
             ze.setTime(timestamp);
-            writeSignatureBlock(signatureBlockTemplate, signatureBytes, publicKey, ze.getOutputStream());
+            writeSignatureBlock(sigBlockTemplate, signatureBytes, publicKey, ze.getOutputStream());
             zipOutput.write( ze);
             if (canceled) return;
 
@@ -585,7 +602,7 @@ public class ZipSigner
 
             if (canceled) {
                 try {
-                    new File( outputZipFilename).delete();
+                    if (outputZipFilename != null) new File( outputZipFilename).delete();
                 }
                 catch (Throwable t) {
                     getLogger().warning( t.getClass().getName() + ":" + t.getMessage());
@@ -594,7 +611,12 @@ public class ZipSigner
         }
     }
 
-
+    private void initProgress()
+    {
+        progressTotalItems = 1000;
+        progressCurrentItem = 0;        
+    }
+    
     private void progress( int priority, String itemName) {
 
         progressCurrentItem += 1;

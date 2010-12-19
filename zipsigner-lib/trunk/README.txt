@@ -136,13 +136,9 @@ SIGNING WITH OTHER CERTIFICATES
     // Use this method to load signature block template files.  
     public byte[] readContentAsBytes( URL contentUrl);
 
-    // Sign the zip using the given public/private key pair.
-    public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
-    		String inputZipFilename, String outputZipFilename);
-
-    // Sign the zip using the given public/private key pair and signature block template.
-    public void signZip( X509Certificate publicKey, PrivateKey privateKey, 
-        		byte[] sigBockTemplate, String inputZipFilename, String outputZipFilename);
+    // Sign the zip using the given public/private key pair. Signature block template may be null if 
+    // you've included android-sun-jarsign-support.jar in the build.
+    public void setKeys( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate);
 
     // Sign the zip using a cert/key pair from the given keystore.  Keystore type on Android is "BKS".
     // See below for information on creating an Android compatible keystore.
