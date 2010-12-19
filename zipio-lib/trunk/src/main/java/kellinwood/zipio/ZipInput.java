@@ -116,7 +116,6 @@ public class ZipInput
             long posEOCDR = scanForEOCDR( 256);
             in.seek( posEOCDR);
             centralEnd = CentralEnd.read( this);
-            DateFormat dateFormat = null;
 
             boolean debug = getLogger().isDebugEnabled();
             if (debug) {
@@ -124,9 +123,7 @@ public class ZipInput
                 getLogger().debug(String.format("Directory entries=%d, size=%d, offset=%d/0x%08x", centralEnd.totalCentralEntries,
                                                 centralEnd.centralDirectorySize, centralEnd.centralStartOffset, centralEnd.centralStartOffset));
 
-                getLogger().debug(" Length   Method    Size  Ratio   Date   Time   CRC-32    Name");
-                getLogger().debug("--------  ------  ------- -----   ----   ----   ------    ----");
-                dateFormat = new SimpleDateFormat("MM-dd-yy HH:mm");
+                ZipListingHelper.listHeader( getLogger());
             }
 
             in.seek( centralEnd.centralStartOffset);            
@@ -134,26 +131,9 @@ public class ZipInput
             for (int i = 0; i < centralEnd.totalCentralEntries; i++) {
                 ZioEntry entry = ZioEntry.read(this);
                 zioEntries.put( entry.getName(), entry);
-                if (debug) {
-                    int ratio = 0;
-                    if (entry.getSize() > 0) ratio = (100 * (entry.getSize() - entry.getCompressedSize())) / entry.getSize();
-                    getLogger().debug(String.format("%8d  %6s %8d %4d%% %s  %08x  %s",
-                                             entry.getSize(),
-                                             entry.getCompression() == 0 ? "Stored" : "Defl:N",
-                                             entry.getCompressedSize(),
-                                             ratio,
-                                             dateFormat.format( new Date( entry.getTime())),
-                                             entry.getCrc32(),
-                                             entry.getName()));
-                }
+                if (debug) ZipListingHelper.listEntry( getLogger(), entry);
             }
 
-            /*
-            for (ZioEntry entry : zioEntries.values()) {
-                entry.readLocalHeader();
-            }
-            */
-            
         }
         catch (Throwable t) {
             t.printStackTrace();

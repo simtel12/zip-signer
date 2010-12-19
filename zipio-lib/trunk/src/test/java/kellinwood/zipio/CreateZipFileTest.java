@@ -29,28 +29,17 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.* ;
 import static org.junit.Assert.* ;
 
-public class CreateZipFileTest {
+public class CreateZipFileTest extends AbstractTest {
 
-    static LoggerInterface log = null;
-    private static LoggerInterface getLogger() {
-        if (log != null) return log;
-        log = LoggerManager.getLogger(CreateZipFileTest.class.getName());
-        return log;
-    }    
 
     
     @Test
     public void createZipTest() {
         
         try {
-            Properties log4jProperties = new Properties();
-            log4jProperties.load ( new FileReader( "log4j.properties" ));
-            PropertyConfigurator.configure( log4jProperties);
-            
-            LoggerManager.setLoggerFactory( new Log4jLoggerFactory());
-            
-            boolean debug = getLogger().isDebugEnabled();
-            
+            setupLogging();
+
+            // Sibling "simple_test.zip" is not read, just used to create the output in the same directory.
             String siblingFile = getClass().getResource("/simple_test.zip").getFile(); 
             File sfile = new File(siblingFile);
             File outputFile = new File(sfile.getParent(), "test_create.zip");
@@ -59,16 +48,30 @@ public class CreateZipFileTest {
             
             ZioEntry entry = new ZioEntry( "B.txt");
             OutputStream entryOut = entry.getOutputStream();
-            entryOut.write( "The answer to the ultimate question of life, the universe, and everything is 42.".getBytes());
+            String bContentText = "The answer to the ultimate question of life, the universe, and everything is 42.";
+            entryOut.write( bContentText.getBytes());
             zipOutput.write(entry);
             
             entry = new ZioEntry( "A.txt");
             entry.setCompression(0);
             entryOut = entry.getOutputStream();
-            entryOut.write( "The name of the computer used to calculate the answer to the ultimate question is \"Earth\".".getBytes());
+            String aContentText = "The name of the computer used to calculate the answer to the ultimate question is \"Earth\".";
+            entryOut.write( aContentText.getBytes());
             zipOutput.write(entry);
             
             zipOutput.close();
+
+            // verify the result
+            ZipInput zipInput = ZipInput.read( outputFile.getAbsolutePath());
+            
+            entry = zipInput.getEntry("A.txt");
+            String content = new String(entry.getData());
+            assertEquals( aContentText, content);
+            
+            entry = zipInput.getEntry("B.txt");
+            content = new String(entry.getData());
+            assertEquals( bContentText, content);
+
             
         }
         catch (Exception x) {
@@ -81,16 +84,14 @@ public class CreateZipFileTest {
     public void mergeZipTest() {
         
         try {
-            Properties log4jProperties = new Properties();
-            log4jProperties.load ( new FileReader( "log4j.properties" ));
-            PropertyConfigurator.configure( log4jProperties);
-            
-            LoggerManager.setLoggerFactory( new Log4jLoggerFactory());
-            
-            boolean debug = getLogger().isDebugEnabled();
+            setupLogging();
             
             String siblingFile = getClass().getResource("/simple_test.zip").getFile();
             ZipInput zipInput = ZipInput.read( siblingFile);
+
+            ZioEntry testEntry = zipInput.getEntry("test.txt");
+            // Change the name of the file, so it becomes to test2.txt in the output
+            testEntry.setName("test2.txt");
             
             File sfile = new File(siblingFile);
             File outputFile = new File(sfile.getParent(), "test_merged.zip");
@@ -99,13 +100,15 @@ public class CreateZipFileTest {
             
             ZioEntry entry = new ZioEntry( "answer.txt");
             OutputStream entryOut = entry.getOutputStream();
-            entryOut.write( "The answer to the ultimate question of life, the universe, and everything is 42.".getBytes());
+            String bContentText = "The answer to the ultimate question of life, the universe, and everything is 42.";
+            entryOut.write( bContentText.getBytes());
             zipOutput.write(entry);
             
             entry = new ZioEntry( "A.txt");
             entry.setCompression(0);
             entryOut = entry.getOutputStream();
-            entryOut.write( "The name of the computer used to calculate the answer to the ultimate question is \"Earth\".".getBytes());
+            String aContentText = "The name of the computer used to calculate the answer to the ultimate question is \"Earth\".";
+            entryOut.write( aContentText.getBytes());
             zipOutput.write(entry);
             
             for (ZioEntry e : zipInput.zioEntries.values()) {
@@ -113,6 +116,20 @@ public class CreateZipFileTest {
             }
             
             zipOutput.close();
+
+            // verify the result
+            zipInput = ZipInput.read( outputFile.getAbsolutePath());
+            
+            entry = zipInput.getEntry("A.txt");
+            String content = new String(entry.getData());
+            assertEquals( aContentText, content);
+            
+            entry = zipInput.getEntry("answer.txt");
+            content = new String(entry.getData());
+            assertEquals( bContentText, content);
+
+            
+            
             
         }
         catch (Exception x) {

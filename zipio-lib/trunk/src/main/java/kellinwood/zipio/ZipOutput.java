@@ -59,6 +59,8 @@ public class ZipOutput
     {
         if (ofile.exists()) ofile.delete();
         out = new FileOutputStream( ofile);
+        ZipListingHelper.listHeader( getLogger());
+        
     }
 
     public ZipOutput( OutputStream os) throws IOException
@@ -80,6 +82,8 @@ public class ZipOutput
         entry.writeLocalEntry( this);
         entriesWritten.add( entry);
         namesWritten.add( entryName);
+        ZipListingHelper.listEntry( getLogger(), entry);
+        
     }
 
 

@@ -30,27 +30,15 @@ import org.apache.log4j.PropertyConfigurator;
 import org.junit.* ;
 import static org.junit.Assert.* ;
 
-public class BasicTest {
+public class BasicTest extends AbstractTest {
 
-    static LoggerInterface log = null;
-    private static LoggerInterface getLogger() {
-        if (log != null) return log;
-        log = LoggerManager.getLogger(BasicTest.class.getName());
-        return log;
-    }    
 
     
     @Test
     public void firstTest() {
         
         try {
-            Properties log4jProperties = new Properties();
-            log4jProperties.load ( new FileReader( "log4j.properties" ));
-            PropertyConfigurator.configure( log4jProperties);
-            
-            LoggerManager.setLoggerFactory( new Log4jLoggerFactory());
-            
-            boolean debug = getLogger().isDebugEnabled();
+            setupLogging();
             
             String inputFile = getClass().getResource("/simple_test.zip").getFile(); 
             if (debug) getLogger().debug("Loading " + inputFile);

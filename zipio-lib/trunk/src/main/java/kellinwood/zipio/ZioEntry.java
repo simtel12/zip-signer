@@ -15,14 +15,12 @@
  */
 package kellinwood.zipio;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
-import java.util.zip.CRC32;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -54,7 +52,7 @@ public class ZioEntry {
     private int localHeaderOffset;
     private long dataPosition = -1;
     private byte[] data = null;
-    private EntryOutputStream entryOut = null;
+    private ZioEntryOutputStream entryOut = null;
     
 
     private static byte[] alignBytes = new byte[4];
@@ -79,7 +77,21 @@ public class ZioEntry {
     }
     
 
-
+    public ZioEntry( String name, String sourceDataFile, short compression, int crc32, int compressedSize, int size)
+        throws IOException
+    {
+        zipInput = new ZipInput( sourceDataFile);
+        filename = name;
+        fileComment = "";
+        this.compression = compression;
+        this.crc32 = crc32;
+        this.compressedSize = compressedSize;
+        this.size = size;
+        this.dataPosition = 0;
+        extraData = new byte[0];
+        setTime( System.currentTimeMillis());
+    }
+    
     public void readLocalHeader() throws IOException
     {
         ZipInput input = zipInput;
@@ -96,40 +108,46 @@ public class ZioEntry {
             throw new IllegalStateException( String.format("Local header not found at pos=0x%08x, file=%s", input.getFilePointer(), filename));
         }
 
+        // This method is usually called just before the data read, so
+        // its only purpose currently is to position the file pointer
+        // for the data read.  The entry's attributes might also have
+        // been changed since the central dir entry was read (e.g.,
+        // filename), so throw away the values here.
+
+        int tmpInt;
+        short tmpShort;
+        
         // 4 	2 	Version needed to extract (minimum)
-        versionRequired = input.readShort();
-        if (debug) log.debug(String.format("Version required: 0x%04x", versionRequired));
+        /* versionRequired */ tmpShort =  input.readShort();
+        if (debug) log.debug(String.format("Version required: 0x%04x", tmpShort /*versionRequired*/));
 
         // 6 	2 	General purpose bit flag
-        generalPurposeBits = input.readShort();
-        if (debug) log.debug(String.format("General purpose bits: 0x%04x", generalPurposeBits));
+        /* generalPurposeBits */ tmpShort = input.readShort();
+        if (debug) log.debug(String.format("General purpose bits: 0x%04x", tmpShort /* generalPurposeBits */));
         
         // 8 	2 	Compression method
-        compression = input.readShort();
-        if (debug) log.debug(String.format("Compression: 0x%04x", compression));
+        /* compression */ tmpShort = input.readShort();
+        if (debug) log.debug(String.format("Compression: 0x%04x", tmpShort /* compression */));
 
         // 10 	2 	File last modification time
-        modificationTime = input.readShort();
-        if (debug) log.debug(String.format("Modification time: 0x%04x", modificationTime));
+        /* modificationTime */ tmpShort = input.readShort();
+        if (debug) log.debug(String.format("Modification time: 0x%04x", tmpShort /* modificationTime */));
 
         // 12 	2 	File last modification date
-        modificationDate = input.readShort();
-        if (debug) log.debug(String.format("Modification date: 0x%04x", modificationDate));
+        /* modificationDate */ tmpShort = input.readShort();
+        if (debug) log.debug(String.format("Modification date: 0x%04x", tmpShort /* modificationDate */));
 
         // 14 	4 	CRC-32
-        tmp = input.readInt();
-        crc32 = (tmp != 0) ? tmp : crc32;
-        if (debug) log.debug(String.format("CRC-32: 0x%04x", crc32));
+        /* crc32 */ tmpInt = input.readInt();
+        if (debug) log.debug(String.format("CRC-32: 0x%04x", tmpInt /*crc32*/));
 
         // 18 	4 	Compressed size
-        tmp = input.readInt();
-        compressedSize = (tmp != 0) ? tmp : compressedSize;
-        if (debug) log.debug(String.format("Compressed size: 0x%04x", compressedSize));
+        /* compressedSize*/ tmpInt = input.readInt();
+        if (debug) log.debug(String.format("Compressed size: 0x%04x", tmpInt /*compressedSize*/));
 
         // 22 	4 	Uncompressed size
-        tmp = input.readInt();
-        size = (tmp != 0) ? tmp : size;
-        if (debug) log.debug(String.format("Size: 0x%04x", size));
+        /* size */ tmpInt = input.readInt();
+        if (debug) log.debug(String.format("Size: 0x%04x", tmpInt /*size*/ ));
 
         // 26 	2 	File name length (n)
         short fileNameLen = input.readShort();
@@ -140,10 +158,10 @@ public class ZioEntry {
         if (debug) log.debug(String.format("Extra length: 0x%04x", extraLen));
 
         // 30 	n 	File name      
-        filename = input.readString(fileNameLen);
+        String filename = input.readString(fileNameLen);
         if (debug) log.debug("Filename: " + filename);
 
-        // Throw away extra data from local header.
+        // Extra data
         byte[] extra = input.readBytes( extraLen);
 
         // Record the file position of this entry's data.
@@ -154,14 +172,6 @@ public class ZioEntry {
             throw new IllegalStateException("Can't handle general purpose bits != 0x0000 && bits != 0x0008");
         }
 
-        generalPurposeBits = 0; // Don't write a data descriptor
-        
-        // Don't write zero-length entries with compression.
-        if (size == 0) {
-            compressedSize = 0;
-            compression = 0;
-            crc32 = 0;
-        }
     }
 
     public void writeLocalEntry( ZipOutput output) throws IOException
@@ -175,13 +185,13 @@ public class ZioEntry {
         boolean debug = getLogger().isDebugEnabled();
         
         if (debug) {
-            getLogger().debug( String.format("Local header at 0x%08x - %s", localHeaderOffset, filename));
+            getLogger().debug( String.format("Writing local header at 0x%08x - %s", localHeaderOffset, filename));
         }
         
         if (entryOut != null) {
             entryOut.close();
             size = entryOut.getSize();
-            data = entryOut.getData();
+            data = ((ByteArrayOutputStream)entryOut.getWrappedStream()).toByteArray();
             compressedSize = data.length;
             crc32 = entryOut.getCRC();
         }
@@ -236,6 +246,7 @@ public class ZioEntry {
         }
         else {
 
+            if (debug) getLogger().debug(String.format("Seeking to position 0x%08x", dataPosition));
             zipInput.seek( dataPosition);
             
             int bufferSize = Math.min( compressedSize, 8096);
@@ -346,9 +357,15 @@ public class ZioEntry {
 
         fileComment = input.readString( fileCommentLen);
         if (debug) log.debug("File comment: " + fileComment);
+
+        generalPurposeBits = 0; // Don't write a data descriptor
         
-        // dataPosition = localHeaderOffset + 30 + filename.length() + extraData.length;
-        // if (debug) log.debug(String.format("Data position: 0x%08x", dataPosition));
+        // Don't write zero-length entries with compression.
+        if (size == 0) {
+            compressedSize = 0;
+            compression = 0;
+            crc32 = 0;
+        }
 
     }
 
@@ -374,6 +391,17 @@ public class ZioEntry {
 
     // Returns an input stream for reading the entry's data. 
     public InputStream getInputStream(OutputStream monitorStream) throws IOException {
+        
+        if (entryOut != null) {
+            entryOut.close();
+            size = entryOut.getSize();
+            data = ((ByteArrayOutputStream)entryOut.getWrappedStream()).toByteArray();
+            compressedSize = data.length;
+            crc32 = entryOut.getCRC();
+            entryOut = null;
+            return new ByteArrayInputStream( data);
+        }
+        
         ZioEntryInputStream dataStream;
         dataStream = new ZioEntryInputStream(this);
         if (monitorStream != null) dataStream.setMonitorStream( monitorStream);
@@ -390,66 +418,11 @@ public class ZioEntry {
     // Returns an output stream for writing an entry's data.
     public OutputStream getOutputStream() 
     {
-        entryOut = new EntryOutputStream( compression);
+        entryOut = new ZioEntryOutputStream( compression, new ByteArrayOutputStream());
         return entryOut;
     }
 
-    static class EntryOutputStream extends OutputStream {
-        int size = 0;  // tracks uncompressed size of data
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        CRC32 crc = new CRC32();
-        int crcValue = 0;
-        OutputStream downstream;
-        
-        public EntryOutputStream( int compression) {
-            
-            if (compression != 0)
-                downstream = new DeflaterOutputStream( baos, new Deflater( Deflater.BEST_COMPRESSION, true));
-            else downstream = baos;    
-        }
 
-        public void close() throws IOException {
-            downstream.flush();
-            downstream.close();
-            crcValue = (int)crc.getValue();
-        }
-
-        public int getCRC() {
-            return crcValue;
-        }
-        
-        public void flush() throws IOException {
-            downstream.flush();
-        }
-
-        public void write(byte[] b) throws IOException {
-            downstream.write(b);
-            crc.update(b);
-            size += b.length;
-        }
-
-        public void write(byte[] b, int off, int len) throws IOException {
-            downstream.write( b, off, len);
-            crc.update( b, off, len);
-            size += len;
-        }
-
-        public void write(int b) throws IOException {
-            downstream.write( b);
-            crc.update( b);
-            size += 1;
-        }
-
-        public int getSize() {
-            return size;
-        }
-
-        public byte[] getData() {
-            return baos.toByteArray();
-        }
-
-    }
-    
     public void write( ZipOutput output) throws IOException {
         boolean debug = getLogger().isDebugEnabled();
 
@@ -586,7 +559,7 @@ public class ZioEntry {
         return dataPosition;
     }
 
-    public EntryOutputStream getEntryOut() {
+    public ZioEntryOutputStream getEntryOut() {
         return entryOut;
     }
 
