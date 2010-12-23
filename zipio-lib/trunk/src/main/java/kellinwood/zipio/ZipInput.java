@@ -58,6 +58,10 @@ public class ZipInput
         return log;
     }
 
+    public String getFilename() {
+        return inputFilename;
+    }
+    
     public static ZipInput read( String filename) throws IOException {
         ZipInput zipInput = new ZipInput( filename);
         zipInput.doRead();

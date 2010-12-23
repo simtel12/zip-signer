@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.util.Date;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
@@ -399,7 +400,13 @@ public class ZioEntry {
             compressedSize = data.length;
             crc32 = entryOut.getCRC();
             entryOut = null;
-            return new ByteArrayInputStream( data);
+            InputStream rawis = new ByteArrayInputStream( data);
+            if (compression == 0) return rawis;
+            else {
+                // Hacky, inflate using a sequence of input streams that returns 1 byte more than the actual length of the data.  
+                // This extra dummy byte is required by InflaterInputStream when the data doesn't have the header and crc fields (as it is in zip files). 
+                return new InflaterInputStream( new SequenceInputStream(rawis, new ByteArrayInputStream(new byte[1])), new Inflater( true));
+            }
         }
         
         ZioEntryInputStream dataStream;
