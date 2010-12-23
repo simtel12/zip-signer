@@ -55,6 +55,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -86,9 +87,7 @@ public class ZipSigner
 
     private boolean canceled = false;
 
-    private int progressTotalItems = 0;
-    private int progressCurrentItem = 0;
-    private ProgressEvent progressEvent = new ProgressEvent();
+    private ProgressHelper progressHelper = new ProgressHelper();
     
     static LoggerInterface log = null;
 
@@ -99,18 +98,17 @@ public class ZipSigner
     private static Pattern stripPattern =
         Pattern.compile("^META-INF/(.*)[.](SF|RSA|DSA)$");
 
-    // private key
-    PrivateKey privateKey = null; 
-
-    // certificate
-    X509Certificate publicKey = null;
-
-    // signature block template
-    byte[] sigBlockTemplate = null;
-
+    Map<String,KeySet> loadedKeys = new HashMap<String,KeySet>();
+    KeySet keySet = null;
+    
     // Allow the operation to be canceled.
     public void cancel() {
         canceled = true;
+    }
+    
+    // Allow the instance to sign again if previously canceled.
+    public void resetCanceled() {
+        canceled = false;
     }
 
     public boolean isCanceled() {
@@ -260,7 +258,7 @@ public class ZipSigner
                      !stripPattern.matcher(name).matches()))
             {
 
-                progress( ProgressEvent.PRORITY_NORMAL, "Generating manifest");
+                progressHelper.progress( ProgressEvent.PRORITY_NORMAL, "Generating manifest");
                 InputStream data = entry.getInputStream();
                 while ((num = data.read(buffer)) > 0) {
                     md.update(buffer, 0, num);
@@ -303,7 +301,7 @@ public class ZipSigner
         Map<String, Attributes> entries = manifest.getEntries();
         for (Map.Entry<String, Attributes> entry : entries.entrySet()) {
             if (canceled) break;
-            progress( ProgressEvent.PRORITY_NORMAL, "Generating signature file");
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, "Generating signature file");
             // Digest of the manifest stanza for this entry.
             String nameEntry = "Name: " + entry.getKey() + "\r\n"; 
             print.print( nameEntry);
@@ -363,7 +361,7 @@ public class ZipSigner
         int i = 1;
         for (String name : names) {
             if (canceled) break;
-            progress( ProgressEvent.PRORITY_NORMAL, String.format("Copying zip entry %d of %d", i, names.size()));
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, String.format("Copying zip entry %d of %d", i, names.size()));
             i += 1;
             ZioEntry inEntry = input.get(name);
             inEntry.setTime(timestamp);
@@ -402,7 +400,7 @@ public class ZipSigner
             Key key = keystore.getKey(certAlias, certPw.toCharArray());
             PrivateKey privateKey = (PrivateKey)key;
             
-            setKeys( publicKey, privateKey, null);
+            setKeys( "custom", publicKey, privateKey, null);
 
             signZip( inputZipFilename, outputZipFilename);
         }
@@ -414,27 +412,30 @@ public class ZipSigner
     public void loadKeys( String name)
         throws IOException, GeneralSecurityException
     {
-        progress(ProgressEvent.PRORITY_IMPORTANT, "Loading certificate and private key");
+        if (loadedKeys.containsKey(name)) return;
         
+        progressHelper.progress(ProgressEvent.PRORITY_IMPORTANT, "Loading certificate and private key");
+        
+        KeySet keySet = new KeySet();
         // load the default private key
         URL privateKeyUrl = getClass().getResource("/keys/"+name+".pk8");
-        privateKey = readPrivateKey(privateKeyUrl, null);
+        keySet.setPrivateKey(readPrivateKey(privateKeyUrl, null));
 
         // load the default certificate
         URL publicKeyUrl = getClass().getResource("/keys/"+name+".x509.pem");
-        publicKey = readPublicKey(publicKeyUrl);
+        keySet.setPublicKey(readPublicKey(publicKeyUrl));
 
         // load the default signature block template
         URL sigBlockTemplateUrl = getClass().getResource("/keys/"+name+".sbt");
-        if (sigBlockTemplateUrl != null) sigBlockTemplate = readContentAsBytes(sigBlockTemplateUrl);
+        if (sigBlockTemplateUrl != null) {
+            keySet.setSigBlockTemplate(readContentAsBytes(sigBlockTemplateUrl));
+        }
 
     }
     
-    public void setKeys( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate)
+    public void setKeys( String name, X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate)
     {
-        this.publicKey = publicKey;
-        this.privateKey = privateKey;
-        this.sigBlockTemplate = signatureBlockTemplate;
+        keySet = new KeySet( name, publicKey, privateKey, signatureBlockTemplate);
     }
     
 
@@ -444,7 +445,7 @@ public class ZipSigner
     public void signZip( Map<String,ZioEntry> zioEntries, String outputZipFilename)
         throws IOException, GeneralSecurityException
     {
-        initProgress();        
+        progressHelper.initProgress();        
         signZip( zioEntries, new FileOutputStream(outputZipFilename), outputZipFilename);
     }
     
@@ -461,9 +462,9 @@ public class ZipSigner
             throw new IllegalArgumentException("Input and output filenames are the same.  Specify a different name for the output.");
         }        
 
-        initProgress();
-        if (privateKey == null) loadKeys("testkey");
-        progress( ProgressEvent.PRORITY_IMPORTANT, "Parsing the input's central directory");
+        progressHelper.initProgress();
+        if (keySet == null) loadKeys("testkey");
+        progressHelper.progress( ProgressEvent.PRORITY_IMPORTANT, "Parsing the input's central directory");
         
         ZipInput input = ZipInput.read( inputZipFilename);
         signZip( input.getEntries(), new FileOutputStream( outputZipFilename), outputZipFilename);
@@ -477,21 +478,21 @@ public class ZipSigner
     public void signZip( Map<String,ZioEntry> zioEntries, OutputStream outputStream, String outputZipFilename)
         throws IOException, GeneralSecurityException    
     {
-        canceled = false;
         
-        initProgress();
-        if (privateKey == null) loadKeys("testkey");
+        
+        progressHelper.initProgress();
+        if (keySet == null) loadKeys("testkey");
 
         ZipOutput zipOutput = null;
 
         try {
             // Assume the certificate is valid for at least an hour.
-            long timestamp = publicKey.getNotBefore().getTime() + 3600L * 1000;
+            long timestamp = keySet.getPublicKey().getNotBefore().getTime() + 3600L * 1000;
 
             zipOutput = new ZipOutput( outputStream);
 
             // Calculate total steps to complete for accurate progress percentages.
-            this.progressTotalItems = 0;
+            int progressTotalItems = 0;
             for (ZioEntry entry: zioEntries.values()) {
                 String name = entry.getName();
                 if (!entry.isDirectory() && !name.equals(JarFile.MANIFEST_NAME) &&
@@ -503,7 +504,8 @@ public class ZipSigner
                 }
             }
             progressTotalItems += 1; // CERT.RSA generation
-            progressCurrentItem = 0;
+            progressHelper.setProgressTotalItems(progressTotalItems);
+            progressHelper.setProgressCurrentItem(0);
 
 
             // MANIFEST.MF
@@ -523,7 +525,7 @@ public class ZipSigner
             // the recovery program appears to require a specific algorithm/mode/padding.  So we use the custom ZipSignature instead.
             // Signature signature = Signature.getInstance("SHA1withRSA"); 
             ZipSignature signature = new ZipSignature();
-            signature.initSign(privateKey);
+            signature.initSign(keySet.getPrivateKey());
 
             //        	if (getLogger().isDebugEnabled()) {
             //        		getLogger().debug(String.format("Signature provider=%s, alg=%s, class=%s",
@@ -559,7 +561,7 @@ public class ZipSigner
                 getLogger().debug( "Signature: \n" + HexDumpEncoder.encode(signatureBytes));
 
                 Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                cipher.init(Cipher.DECRYPT_MODE, publicKey);
+                cipher.init(Cipher.DECRYPT_MODE, keySet.getPublicKey());
 
                 byte[] tmpData = cipher.doFinal( signatureBytes);
                 getLogger().debug( "Signature Decrypted: \n" + HexDumpEncoder.encode(tmpData));
@@ -586,10 +588,10 @@ public class ZipSigner
             }
 
             // CERT.RSA
-            progress( ProgressEvent.PRORITY_NORMAL, "Generating signature block file");
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, "Generating signature block file");
             ze = new ZioEntry(CERT_RSA_NAME);
             ze.setTime(timestamp);
-            writeSignatureBlock(sigBlockTemplate, signatureBytes, publicKey, ze.getOutputStream());
+            writeSignatureBlock(keySet.getSigBlockTemplate(), signatureBytes, keySet.getPublicKey(), ze.getOutputStream());
             zipOutput.write( ze);
             if (canceled) return;
 
@@ -610,44 +612,15 @@ public class ZipSigner
             }
         }
     }
-
-    private void initProgress()
-    {
-        progressTotalItems = 1000;
-        progressCurrentItem = 0;        
-    }
     
-    private void progress( int priority, String itemName) {
-
-        progressCurrentItem += 1;
-
-        int percentDone = (100 * progressCurrentItem) / progressTotalItems;
-
-        // Notify listeners here
-        for (ProgressListener listener : listeners) {
-            progressEvent.setMessage(itemName);
-            progressEvent.setPercentDone(percentDone);
-            progressEvent.setPriority(priority);
-            listener.onProgress( progressEvent);
-        }
-    }
-
-    private ArrayList<ProgressListener> listeners = new ArrayList<ProgressListener>();
-
-    @SuppressWarnings("unchecked")
-    public synchronized void addProgressListener( ProgressListener l)
+    public void addProgressListener( ProgressListener l)
     {
-        ArrayList<ProgressListener> list = (ArrayList<ProgressListener>)listeners.clone();
-        list.add(l);
-        listeners = list;
+        progressHelper.addProgressListener(l);
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized void removeProgressListener( ProgressListener l)
     {
-        ArrayList<ProgressListener> list = (ArrayList<ProgressListener>)listeners.clone();
-        list.remove(l);
-        listeners = list;
-    }    
+        progressHelper.removeProgressListener(l);
+    }     
 
 }
