@@ -12,13 +12,14 @@ App for signing Zip, Apk, and/or Jar files onboard Android devices.
   * The compression mode and size of entries in the input file are preserved in the output  (v1.3)
   * Sign with your choice of key: media, platform, shared, or testkey (v1.4)
   * Auto-modes for determining which key to sign with (v1.4)
+  * Automatically generate the output filename based on the input filename -- "input.zip" becomes "input-signed.zip" (v1.5)
 
 
 ==Zip Picker Activity==
 
 This is the activity launched by default.  From this screen you can enter the input and output files.  When you click "Sign File" the Zip Signer Activity is launched.
 
-The "Choose In/Out...", "Input...", and "Output..." buttons launch an integrated file browser to select the input and output file parameters.  Upon selection, the file name text fields are updated.  When using "Choose In/Out..." the output filename is automatically set base on the name of the selected input file -- e.g., "input.zip" becomes "input-signed.zip" for the output filename (new for v1.5).
+The "Choose In/Out...", "Input...", and "Output..." buttons launch an integrated file browser to select the input and output file parameters.  Upon selection, the file name text fields are updated.  When using "Choose In/Out..." the output filename is automatically set base on the name of the selected input file -- e.g., "input.zip" becomes "input-signed.zip" for the output filename (v1.5).
 
 ===Key/Mode==
 Prior to v1.4, ZipSigner always signed with the "testkey".
