@@ -10,6 +10,8 @@ App for signing Zip, Apk, and/or Jar files onboard Android devices.
   * Output files are also automatically zip-aligned (v1.3)
   * The compression mode and size of entries in the input file are preserved in the output  (v1.3)
   * Signing activity is callable by other apps via an Intent
+  * Sign with your choice of key: media, platform, shared, or testkey (v1.4)
+  * Auto-modes for determining which key to sign with (v1.4)
 
 
 ==Zip Picker Activity==
@@ -17,6 +19,22 @@ App for signing Zip, Apk, and/or Jar files onboard Android devices.
 This is the activity launched by default.  From this screen you can enter the input and output files.  When you click "Sign File" the Zip Signer Activity is launched.
 
 The "Choose..." and "Save As..." buttons launch an integrated file browser to select the input and output file parameters.  Upon selection, the file name text fields are updated. 
+
+===Key/Mode==
+Prior to v1.4, ZipSigner always signed with the "testkey".
+
+ZipSigner can sign with the four Google keys: "media", "platform",
+"shared", and "testkey".  There are also two auto-key modes -- "auto"
+and "auto-testkey". In auto mode, ZipSigner examines the signature
+block of the input file and automatically determines which key should
+be used to sign the file such that the output is signed with the same
+key as the input file.  In "auto" mode the signing operation will fail
+if it can't determine which of the four keys to use.  The mode
+"auto-testkey" is similar except ZipSigner falls back to the testkey
+if it cant automatically determine which key to use.  Specifying one
+of the keys directly as the key/mode will force the output to be
+signed with the specified key, regardless of which key the intput file
+was signed with.
 
 ==Zip Signer Activity==
 
