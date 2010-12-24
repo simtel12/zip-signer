@@ -69,6 +69,9 @@ public class Main
             Option providerOption = new Option("p", "provider", false, "Alternate security provider class - e.g., 'org.bouncycastle.jce.provider.BouncyCastleProvider'");
             providerOption.setArgs( 1);
 
+            Option modeOption = new Option("m", "keymode", false, "Keymode one of: auto, auto-testkey, media, platform, shared, testkey");
+            modeOption.setArgs( 1);
+            
             Option keyOption = new Option("k", "key", false, "PCKS#8 encoded private key file");
             keyOption.setArgs( 1);
 
@@ -83,6 +86,7 @@ public class Main
 
             options.addOption( helpOption);
             options.addOption( providerOption);
+            options.addOption( modeOption);
             options.addOption( keyOption);
             options.addOption( certOption);
             options.addOption( sbtOption);            
@@ -151,7 +155,12 @@ public class Main
                 sigBlockTemplate = signer.readContentAsBytes( sbtUrl);
             }
 
-            signer.setKeys( cert, privateKey, sigBlockTemplate);
+            if (cmdLine.hasOption( keyOption.getOpt())) {
+                signer.setKeys( "custom", cert, privateKey, sigBlockTemplate);
+            }
+            else if (cmdLine.hasOption( modeOption.getOpt())) {
+                signer.setKeymode(modeOption.getValue());
+            }
             signer.signZip( argList.get(0), argList.get(1));
         }
         catch (Throwable t) {
