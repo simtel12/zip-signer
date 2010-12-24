@@ -378,10 +378,13 @@ public class ZioEntry {
         byte[] tmpdata = new byte[size];
         
         InputStream din = getInputStream();
+        int count = 0;
         
-        int count = din.read( tmpdata);
-        if (count != size) 
-            throw new IllegalStateException(String.format("Read failed, expecting %d bytes, got %%d instead", size, count));
+        while (count != size) {
+            int numRead = din.read( tmpdata, count, size-count);
+            if (numRead < 0) throw new IllegalStateException(String.format("Read failed, expecting %d bytes, got %d instead", size, count));
+            count += numRead;
+        }
         return tmpdata;
     }
 
