@@ -77,6 +77,22 @@ catch (Throwable t) {
     // log, display toast, etc.
 }
 
+KEYS/MODES
+
+ZipSigner can sign with the four Google keys: "media", "platform",
+"shared", and "testkey".  There are also two auto-key modes -- "auto"
+and "auto-testkey". In auto mode, ZipSigner examines the signature
+block of the input file and automatically determines which key should
+be used to sign the file such that the output is signed with the same
+key as the input file.  In "auto" mode the signing operation will fail
+if it can't determine which of the four keys to use.  The mode
+"auto-testkey" is similar except ZipSigner falls back to the testkey
+if it cant automatically determine which key to use.  Specifying one
+of the keys directly as the key/mode will force the output to be
+signed with the specified key, regardless of which key the intput file
+was signed with.
+
+zipSigner.setKeyMode( String mode)
 
 GETTING PROGRESS UPDATES:
 
