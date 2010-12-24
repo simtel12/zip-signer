@@ -18,6 +18,7 @@ package kellinwood.zipsigner;
 import java.io.File;
 import java.net.URL;
 
+import kellinwood.security.zipsigner.ZipSigner;
 import kellinwood.zipsigner.R;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
@@ -36,8 +37,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 /** App for signing zip, apk, and/or jar files on an Android device. 
@@ -80,9 +83,13 @@ public class ZipPickerActivity extends Activity {
             }
         });
 
+        String extStorageDir = Environment.getExternalStorageDirectory().toString();
+        // Strip /mnt from /sdcard
+        if (extStorageDir.startsWith("/mnt/sdcard")) extStorageDir = extStorageDir.substring(4);
+        
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        String inputFile = prefs.getString(PREFERENCE_IN_FILE, Environment.getExternalStorageDirectory().toString() + "/unsigned.zip");
-        String outputFile = prefs.getString(PREFERENCE_OUT_FILE, Environment.getExternalStorageDirectory().toString() + "/signed.zip");        
+        String inputFile = prefs.getString(PREFERENCE_IN_FILE, extStorageDir + "/unsigned.zip");
+        String outputFile = prefs.getString(PREFERENCE_OUT_FILE, extStorageDir + "/signed.zip");        
 
         EditText inputText = (EditText)findViewById(R.id.InFileEditText);
         inputText.setText( inputFile); 
@@ -103,7 +110,16 @@ public class ZipPickerActivity extends Activity {
                 saveFile();
             }
         });        
+        
+        Spinner spinner = (Spinner) findViewById(R.id.KeyModeSpinner);
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>( this, android.R.layout.simple_spinner_item);
+        for (String mode : ZipSigner.SUPPORTED_KEY_MODES) {
+            adapter.add(mode);
+        }
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
 
+        
     }
 
     private String getInputFilename() {
@@ -141,18 +157,9 @@ public class ZipPickerActivity extends Activity {
             i.putExtra("inputFile", inputFile);
             i.putExtra("outputFile", outputFile);
 
-            //    		// The following keystore/key parameters are optional.  
-            //    		// The default values are as you see them here.
-            //    		URL keystoreUrl = getClass().getResource("/assets/keystore.ks");
-            //    		if (keystoreUrl == null) {
-            //    			logger.error( "Unable to locate keystore.");
-            //    			return;
-            //    		}    		
-            //    		i.putExtra("keystoreUrl", keystoreUrl.toExternalForm());
-            //    		i.putExtra("keystoreType", "BKS");
-            //    		i.putExtra("keystorePass", "android");
-            //    		i.putExtra("keyAlias", "CERT");
-            //    		i.putExtra("keyPass", "android");
+            String keyMode = (String)((Spinner)this.findViewById(R.id.KeyModeSpinner)).getSelectedItem();
+            logger.debug(keyMode);
+            i.putExtra("keyMode", keyMode);
 
             // If "showProgressItems" is true, then the ZipSignerActivity displays the names of files in the 
             // zip as they are generated/copied during the signature process.
@@ -261,14 +268,14 @@ public class ZipPickerActivity extends Activity {
 
     }
 
-    private void launchFileBrowser( String reason, int requestCode)
+    private void launchFileBrowser( String reason, int requestCode, String samplePath)
     {
         try
         {
             String startPath = "/";
-            String inf = getInputFilename();
+            String inf = samplePath;
             if (inf != null && inf.length() > 0) {
-                File f = new File( getInputFilename());
+                File f = new File( samplePath);
                 startPath = f.getParent();
             }
 
@@ -283,12 +290,12 @@ public class ZipPickerActivity extends Activity {
 
 
     private void openFile(){
-        launchFileBrowser( "select input", REQUEST_CODE_PICK_FILE_TO_OPEN);
+        launchFileBrowser( "select input", REQUEST_CODE_PICK_FILE_TO_OPEN, getInputFilename());
     }
 
 
     private void saveFile() {
-        launchFileBrowser( "select output", REQUEST_CODE_PICK_FILE_TO_SAVE);
+        launchFileBrowser( "select output", REQUEST_CODE_PICK_FILE_TO_SAVE, getOutputFilename());
     }
 
 

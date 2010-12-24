@@ -3,13 +3,13 @@
     <string name="app_name">ZipSigner</string>
 	
 	<string name="InputZipLabel">Input File (zip/apk/jar)</string>
-	<string name="OpenPickButtonLabel">Choose...</string>
+	<string name="OpenPickButtonLabel">Choose Input...</string>
 	<string name="FileManagerOpenButtonLabel">Choose</string>
 	
 	<string name="SignedZipLabel">Signed Output File</string>
-	<string name="SaveAsPickButtonLabel">Save As...</string>
+	<string name="SaveAsPickButtonLabel">Select Output...</string>
 	<string name="FileManagerSaveButtonLabel">Save As</string>
-	
+	<string name="KeyModeLabel">Key/mode: </string>
 	<string name="SignButtonLabel">Sign The File</string>
 	
 	<string name="AboutZipSignerTitle">About</string>

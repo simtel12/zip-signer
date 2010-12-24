@@ -15,9 +15,8 @@
  */
 package kellinwood.zipsigner;
 
-import java.net.URL;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
+import java.util.Observable;
+import java.util.Observer;
 
 import kellinwood.zipsigner.R;
 
@@ -54,9 +53,9 @@ public class ZipSignerActivity extends Activity {
     private static final int MESSAGE_TYPE_SIGNING_COMPLETE = 2;
     private static final int MESSAGE_TYPE_SIGNING_CANCELED = 3;
     private static final int MESSAGE_TYPE_SIGNING_ERROR = 4;    
+    private static final int MESSAGE_TYPE_ANNOUNCE_KEY = 5;    
 
-    private static final String CURRENT_ITEM_NAME = "currentItem";
-    private static final String ERROR_MESSAGE_NAME = "errorMessage";
+    private static final String MESSAGE_KEY = "message";
 
 
     /** Called when the activity is first created. */
@@ -70,7 +69,6 @@ public class ZipSignerActivity extends Activity {
 
         logger = (AndroidLogger)LoggerManager.getLogger(this.getClass().getName());
         logger.setToastContext(getBaseContext());
-        logger.setDebugToastEnabled(true);
 
         currentItemView = (TextView)findViewById(R.id.SigningZipItemTextView);
 
@@ -102,7 +100,7 @@ public class ZipSignerActivity extends Activity {
                 progressBar.setProgress(percentDone);
                 Bundle data = msg.getData();
                 if (data != null) {
-                    String currentItem = data.getString( CURRENT_ITEM_NAME);
+                    String currentItem = data.getString( MESSAGE_KEY);
                     currentItemView.setText( currentItem);
                 }
                 break;
@@ -116,30 +114,31 @@ public class ZipSignerActivity extends Activity {
                 finish();
                 break;
             case MESSAGE_TYPE_SIGNING_ERROR:
-                String msgText = msg.getData().getString( ERROR_MESSAGE_NAME);
+                String msgText = msg.getData().getString( MESSAGE_KEY);
                 logger.error( msgText);
                 Intent e = new Intent();
                 e.putExtra( "errorMessage", msgText);
                 setResult( RESULT_FIRST_USER, e);
                 finish();
                 break;
+            case MESSAGE_TYPE_ANNOUNCE_KEY:
+                msgText = msg.getData().getString( MESSAGE_KEY);
+                // this is not an error, but is used to show a toast to with the key name.
+                logger.error("Signing with key: " + msgText);
+                break;
             }
         }
     };
 
-    class SignerThread extends Thread implements ProgressListener
+    class SignerThread extends Thread implements ProgressListener, Observer
     {
         ZipSigner zipSigner = null;
         Handler mHandler;
         long lastProgressTime = 0;
 
-        //        String keystore;
-        //        String keystoreType;
-        //        String keystorePass;
-        //        String keyAlias;
-        //        String keyPass;
         String inputFile;
         String outputFile;
+        String keyMode;
         boolean showProgressItems;
 
         private String getStringExtra( Intent i, String extraName, String defaultValue) {
@@ -153,15 +152,11 @@ public class ZipSignerActivity extends Activity {
         {
             mHandler = h;
 
-            //            keystore = i.getStringExtra("keystoreUrl");
-            //            keystoreType = getStringExtra(i, "keystoreType", "BKS");
-            //            keystorePass = getStringExtra(i, "keystorePass", "android");
-            //            keyAlias = getStringExtra(i, "keyAlias", "CERT");
-            //            keyPass = getStringExtra(i, "keyPass", "android");
             showProgressItems = Boolean.valueOf( getStringExtra(i, "showProgressItems", "true"));
             inputFile = i.getStringExtra("inputFile");
             outputFile = i.getStringExtra("outputFile");
-
+            keyMode = i.getStringExtra("keyMode");
+            if (keyMode == null) keyMode = "testkey"; // backwards compatible.
         }
 
 
@@ -172,31 +167,15 @@ public class ZipSignerActivity extends Activity {
         public void run()
         {
             try {
-
-
-
                 if (inputFile == null) throw new IllegalArgumentException("Parameter inputFile is null");
                 if (outputFile == null) throw new IllegalArgumentException("Parameter outputFile is null");
 
                 zipSigner = new ZipSigner();
-
+                zipSigner.setKeymode(keyMode);
+                zipSigner.addAutoKeyObserver(this);
                 zipSigner.addProgressListener( this);
 
-
                 zipSigner.signZip( inputFile, outputFile);
-
-                //              URL keystoreUrl;
-                //
-                //              if (keystore != null) keystoreUrl = new URL( keystore);
-                //              else {
-                //                  keystore = "/assets/keystore.ks";
-                //                  keystoreUrl = getClass().getResource( keystore);
-                //                  if (keystoreUrl == null) keystore = "classpath:"+keystore;
-                //              }
-                //
-                //              if (keystoreUrl == null) throw new IllegalArgumentException("Unable to locate keystore " + keystore);                
-                //              zipSigner.signZip(keystoreUrl, keystoreType, keystorePass, keyAlias, keyPass, inputFile, outputFile);
-
 
                 if (zipSigner.isCanceled()) 
                     sendMessage( MESSAGE_TYPE_SIGNING_CANCELED, 0, null, null);
@@ -209,7 +188,7 @@ public class ZipSignerActivity extends Activity {
                 int pos = tname.lastIndexOf('.');
                 if (pos >= 0) tname = tname.substring(pos+1);
 
-                sendMessage( MESSAGE_TYPE_SIGNING_ERROR, 0, ERROR_MESSAGE_NAME, tname + ": " + t.getMessage());
+                sendMessage( MESSAGE_TYPE_SIGNING_ERROR, 0, MESSAGE_KEY, tname + ": " + t.getMessage());
             }
         }
 
@@ -241,12 +220,20 @@ public class ZipSignerActivity extends Activity {
             if (event.getPercentDone() == 100 || event.getPriority() > ProgressEvent.PRORITY_NORMAL || (currentTime - lastProgressTime) >= 500)
             {
                 if (showProgressItems)
-                    sendMessage( MESSAGE_TYPE_PERCENT_DONE, event.getPercentDone(), CURRENT_ITEM_NAME, event.getMessage());
+                    sendMessage( MESSAGE_TYPE_PERCENT_DONE, event.getPercentDone(), MESSAGE_KEY, event.getMessage());
                 else
                     sendMessage( MESSAGE_TYPE_PERCENT_DONE, event.getPercentDone(), null, null);
 
                 lastProgressTime = currentTime;
             }
+        }
+
+        // Called when the key is automatically determined
+        @Override
+        public void update(Observable o, Object arg) {
+            logger.debug("observer update: " + arg);
+            sendMessage( MESSAGE_TYPE_ANNOUNCE_KEY, 0, MESSAGE_KEY, (String)arg);
+            
         }
     }
 
