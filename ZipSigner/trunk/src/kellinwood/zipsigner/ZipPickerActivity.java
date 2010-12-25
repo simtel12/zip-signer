@@ -53,7 +53,7 @@ public class ZipPickerActivity extends Activity {
 
     protected static final int REQUEST_CODE_PICK_FILE_TO_OPEN = 1;
     protected static final int REQUEST_CODE_PICK_FILE_TO_SAVE = 2;
-    protected static final int REQUEST_CODE_PICK_DIRECTORY = 3;
+    protected static final int REQUEST_CODE_PICK_INOUT_FILE = 3;
 
     protected static final int REQUEST_CODE_SIGN_FILE = 80701;
 
@@ -100,14 +100,21 @@ public class ZipPickerActivity extends Activity {
         Button button = (Button) findViewById(R.id.OpenPickButton);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View arg0) {
-                openFile();
+                pickInputFile();
             }
         });
 
         button = (Button) findViewById(R.id.SaveAsPickButton);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View arg0) {
-                saveFile();
+                pickOutputFile();
+            }
+        });      
+        
+        button = (Button) findViewById(R.id.InOutPickButton);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View arg0) {
+                pickInputOutputFiles();
             }
         });        
         
@@ -228,6 +235,20 @@ public class ZipPickerActivity extends Activity {
                     ((EditText)findViewById(R.id.OutFileEditText)).setText(uri.getPath());
                 }				
                 break;
+            case REQUEST_CODE_PICK_INOUT_FILE:
+                // obtain the filename
+                uri = data == null ? null : data.getData();
+                if (uri != null) {
+                    String filename = uri.getPath();
+                    ((EditText)findViewById(R.id.InFileEditText)).setText(filename);
+                    // auto set output file ... "input.zip" becomes "input-signed.zip"
+                    int pos = filename.lastIndexOf('.');
+                    if (pos > 0) {
+                        filename = filename.substring(0, pos) + "-signed" + filename.substring(pos); 
+                    }
+                    ((EditText)findViewById(R.id.OutFileEditText)).setText(filename);
+                }               
+                break;                
             case REQUEST_CODE_SIGN_FILE:
                 logger.info("File signing operation succeeded!");
                 break;
@@ -244,6 +265,8 @@ public class ZipPickerActivity extends Activity {
             case REQUEST_CODE_PICK_FILE_TO_OPEN:
                 break;
             case REQUEST_CODE_PICK_FILE_TO_SAVE:
+                break;
+            case REQUEST_CODE_PICK_INOUT_FILE:
                 break;                
             default:
                 logger.error("onActivityResult, RESULT_CANCELED, unknown requestCode " + requestCode);
@@ -289,13 +312,17 @@ public class ZipPickerActivity extends Activity {
     }
 
 
-    private void openFile(){
+    private void pickInputFile(){
         launchFileBrowser( "select input", REQUEST_CODE_PICK_FILE_TO_OPEN, getInputFilename());
     }
 
 
-    private void saveFile() {
+    private void pickOutputFile() {
         launchFileBrowser( "select output", REQUEST_CODE_PICK_FILE_TO_SAVE, getOutputFilename());
+    }
+
+    private void pickInputOutputFiles() {
+        launchFileBrowser( "select input", REQUEST_CODE_PICK_INOUT_FILE, getOutputFilename());
     }
 
 

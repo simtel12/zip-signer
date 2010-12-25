@@ -12,15 +12,22 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     >
+<Button android:text="@string/InOutPickButtonLabel" 
+        android:id="@+id/InOutPickButton" 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content"></Button>        
+
 <Button android:text="@string/OpenPickButtonLabel" 
         android:id="@+id/OpenPickButton" 
         android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        />
 
 <Button android:text="@string/SaveAsPickButtonLabel" 
         android:id="@+id/SaveAsPickButton" 
         android:layout_width="wrap_content" 
         android:layout_height="wrap_content"></Button>
+        
 </LinearLayout>        
         
 <TextView android:text="@string/InputZipLabel" 
