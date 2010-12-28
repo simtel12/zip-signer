@@ -79,7 +79,40 @@ public class AndroidLogger extends AbstractLogger
 	public void setDebugToastEnabled(boolean isDebugToastEnabled) {
 		this.isDebugToastEnabled = isDebugToastEnabled;
 	}
-	
+
+    // error, log only (no toast)
+	public void errorLO(String message, Throwable t) {
+        boolean toastState = isErrorToastEnabled;
+        isErrorToastEnabled = false;
+		write( ERROR, message, t);
+        isErrorToastEnabled = toastState;
+	}
+
+    // warning, log only (no toast)
+	public void warningLO(String message, Throwable t) {
+        boolean toastState = isWarningToastEnabled;
+        isWarningToastEnabled = false;
+		write( WARNING, message, t);
+        isWarningToastEnabled = toastState;
+	}
+    
+    // info, log only (no toast)
+	public void infoLO(String message, Throwable t) {
+        boolean toastState = isInfoToastEnabled;
+        isInfoToastEnabled = false;
+		write( INFO, message, t);
+        isInfoToastEnabled = toastState;
+	}
+    
+    // debug, log only (no toast)
+	public void debugLO(String message, Throwable t) {
+        boolean toastState = isDebugToastEnabled;
+        isDebugToastEnabled = false;
+		write( DEBUG, message, t);
+        isDebugToastEnabled = toastState;
+	}
+
+    
 	@Override
 	public void write(String level, String message, Throwable t) {
 		// TODO Auto-generated method stub
