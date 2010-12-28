@@ -144,6 +144,7 @@ public class ZipSigner
             keySet = null;
         }
         else {
+            progressHelper.initProgress();        
             loadKeys( keymode);
         }
     }
