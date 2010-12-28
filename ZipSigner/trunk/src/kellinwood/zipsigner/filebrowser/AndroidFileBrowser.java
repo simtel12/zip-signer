@@ -158,6 +158,7 @@ public class AndroidFileBrowser extends ListActivity {
 
         Drawable currentIcon = null;
         for (File currentFile : files) {
+            if (currentFile.getName().startsWith(".")) continue; // ignore hidden files and directories.
             if (currentFile.isDirectory()) {
                 currentIcon = getResources().getDrawable(R.drawable.folder);
             }

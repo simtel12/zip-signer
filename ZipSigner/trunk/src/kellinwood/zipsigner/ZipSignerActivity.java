@@ -184,6 +184,10 @@ public class ZipSignerActivity extends Activity {
 
             }
             catch (Throwable t) {
+
+                // Log error+throwable, but without a Toast because we're in a worker thread.
+                logger.errorLO( t.getMessage(), t);
+                
                 String tname = t.getClass().getName();
                 int pos = tname.lastIndexOf('.');
                 if (pos >= 0) tname = tname.substring(pos+1);
