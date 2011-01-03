@@ -28,16 +28,16 @@ Prior to v1.4, ZipSigner always signed with the "testkey".
 
 ZipSigner can sign with the four Google keys: "media", "platform",
 "shared", and "testkey".  There are also two auto-key modes -- "auto"
-and "auto-testkey". In auto mode, ZipSigner examines the signature
-block of the input file and automatically determines which key should
-be used to sign the file such that the output is signed with the same
-key as the input file.  In "auto" mode the signing operation will fail
-if it can't determine which of the four keys to use.  The mode
-"auto-testkey" is similar except ZipSigner falls back to the testkey
-if it cant automatically determine which key to use.  Specifying one
-of the keys directly as the key/mode will force the output to be
-signed with the specified key, regardless of which key the intput file
+and "auto-testkey". Specifying one
+of the four keys directly as the key/mode will force the output to be
+signed with the specified key, regardless of which key the input file
 was signed with.
+
+|| Mode Name* || *Description* ||
+|| auto || In auto mode, ZipSigner examines the signature block of the input file and automatically determines which key should be used to sign the file such that the output is signed with the same key as the input file.  In "auto" mode the signing operation will fail if it can't determine which of the four keys to use. ||
+|| auto-testkey || The mode "auto-testkey" is similar except ZipSigner falls back to the testkey if it cant automatically determine which key to use. ||
+|| auto-none || In this mode, if the signing key can't be determined automatically then the input file is simply copied to the output file. ||
+|| none || In this mode the input file is simply copied to the output file. ||
 
 ==Zip Signer Activity==
 
