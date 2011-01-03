@@ -24,7 +24,7 @@ This is the activity launched by default.  From this screen you can enter the in
 The "Choose In/Out...", "Input...", and "Output..." buttons launch an integrated file browser to select the input and output file parameters.  Upon selection, the file name text fields are updated.  When using "Choose In/Out..." the output filename is automatically set base on the name of the selected input file -- e.g., "input.zip" becomes "input-signed.zip" for the output filename (v1.5).
 
 ===Key/Mode==
-Prior to v1.4, ZipSigner always signed with the "testkey".
+Prior to v1.4, ZipSigner always signed with the "testkey".  This is also the key required in most cases when signing an update zip file for Android.
 
 ZipSigner can sign with the four Google keys: "media", "platform",
 "shared", and "testkey".  Specifying one of the four keys directly as the key/mode will force the output to be signed with the specified key, regardless of which key the input file was signed with.  There are also three auto-select key modes -- "auto", "auto-testkey", and "auto-none". 
