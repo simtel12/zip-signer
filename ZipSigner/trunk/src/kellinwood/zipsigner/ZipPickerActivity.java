@@ -25,12 +25,14 @@ import kellinwood.logging.android.AndroidLogger;
 import kellinwood.logging.android.AndroidLoggerFactory;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -172,7 +174,10 @@ public class ZipPickerActivity extends Activity {
             // zip as they are generated/copied during the signature process.
             i.putExtra("showProgressItems", "true"); 
 
-
+            // Set the result code used to indicate that auto-key selection failed.  This will default to
+            // RESULT_FIRST_USER if not set (same code used to signal an error).
+            i.putExtra("autoKeyFailRC", RESULT_FIRST_USER+1);
+            
             // Activity is started and the result is returned via a call to onActivityResult(), below.
             startActivityForResult(i, REQUEST_CODE_SIGN_FILE);
 
@@ -207,6 +212,22 @@ public class ZipPickerActivity extends Activity {
         return false;
     }
 
+    protected void alertDialog( String title, String message) {
+        final AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+        // TODO: move text into resources                    
+        alertDialog.setTitle( title);
+        alertDialog.setMessage( message);
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (Message)null);
+        alertDialog.show();
+        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        button.setOnClickListener( new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                alertDialog.dismiss();
+            }
+            
+        });        
+    }
     /**
      * Receives the result of other activities started with startActivityForResult(...)
      */
@@ -285,6 +306,18 @@ public class ZipPickerActivity extends Activity {
                 break;
             }
             break;
+        case RESULT_FIRST_USER+1: // error with auto-key selection
+            switch (requestCode) {
+            case REQUEST_CODE_SIGN_FILE:
+                // TODO display alert dialog?
+                String errorMessage = data.getStringExtra("errorMessage");
+                alertDialog("Key Selection Error", errorMessage);
+                break;
+            default:
+                logger.error("onActivityResult, RESULT_FIRST_USER+1, unknown requestCode " + requestCode);
+                break;
+            }
+            break;            
         default:
             logger.error("onActivityResult, unknown resultCode " + resultCode + ", requestCode = " + requestCode);
         }

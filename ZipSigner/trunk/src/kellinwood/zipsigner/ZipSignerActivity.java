@@ -26,6 +26,7 @@ import kellinwood.logging.android.AndroidLoggerFactory;
 import kellinwood.security.zipsigner.ProgressEvent;
 import kellinwood.security.zipsigner.ZipSigner;
 import kellinwood.security.zipsigner.ProgressListener;
+import kellinwood.security.zipsigner.AutoKeyException;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -54,10 +55,12 @@ public class ZipSignerActivity extends Activity {
     private static final int MESSAGE_TYPE_SIGNING_CANCELED = 3;
     private static final int MESSAGE_TYPE_SIGNING_ERROR = 4;    
     private static final int MESSAGE_TYPE_ANNOUNCE_KEY = 5;    
+    private static final int MESSAGE_TYPE_AUTO_KEY_FAIL = 6;    
 
     private static final String MESSAGE_KEY = "message";
 
-
+    private int AUTO_KEY_FAIL_RESULT = RESULT_FIRST_USER;
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -69,7 +72,8 @@ public class ZipSignerActivity extends Activity {
 
         logger = (AndroidLogger)LoggerManager.getLogger(this.getClass().getName());
         logger.setToastContext(getBaseContext());
-
+        logger.setInfoToastEnabled(true);
+        
         currentItemView = (TextView)findViewById(R.id.SigningZipItemTextView);
 
         progressBar = (ProgressBar)findViewById(R.id.SigningZipProgressBar);
@@ -85,7 +89,10 @@ public class ZipSignerActivity extends Activity {
 
         });
 
-        signerThread = new SignerThread( handler, getIntent());
+        Intent intent = getIntent();
+        AUTO_KEY_FAIL_RESULT = intent.getExtras().getInt("autoKeyFailRC", RESULT_FIRST_USER);
+        
+        signerThread = new SignerThread( handler, intent);
         signerThread.start();
     }
 
@@ -116,15 +123,22 @@ public class ZipSignerActivity extends Activity {
             case MESSAGE_TYPE_SIGNING_ERROR:
                 String msgText = msg.getData().getString( MESSAGE_KEY);
                 logger.error( msgText);
-                Intent e = new Intent();
-                e.putExtra( "errorMessage", msgText);
-                setResult( RESULT_FIRST_USER, e);
+                Intent i = new Intent();
+                i.putExtra( "errorMessage", msgText);
+                setResult( RESULT_FIRST_USER, i);
                 finish();
                 break;
             case MESSAGE_TYPE_ANNOUNCE_KEY:
                 msgText = msg.getData().getString( MESSAGE_KEY);
-                // this is not an error, but is used to show a toast to with the key name.
-                logger.error("Signing with key: " + msgText);
+                logger.info("Signing with key: " + msgText);
+                break;
+            case MESSAGE_TYPE_AUTO_KEY_FAIL:
+                msgText = msg.getData().getString( MESSAGE_KEY);
+                if (AUTO_KEY_FAIL_RESULT == RESULT_FIRST_USER) logger.error( msgText);
+                i = new Intent();
+                i.putExtra( "errorMessage", msgText);
+                setResult( AUTO_KEY_FAIL_RESULT, i);
+                finish();
                 break;
             }
         }
@@ -132,6 +146,7 @@ public class ZipSignerActivity extends Activity {
 
     class SignerThread extends Thread implements ProgressListener, Observer
     {
+        AndroidLogger logger = (AndroidLogger)LoggerManager.getLogger(this.getClass().getName());
         ZipSigner zipSigner = null;
         Handler mHandler;
         long lastProgressTime = 0;
@@ -183,10 +198,12 @@ public class ZipSignerActivity extends Activity {
                     sendMessage( MESSAGE_TYPE_SIGNING_COMPLETE, 0, null, null);
 
             }
+            catch (AutoKeyException x) {
+                sendMessage( MESSAGE_TYPE_AUTO_KEY_FAIL, 0, MESSAGE_KEY, x.getMessage());
+            }
             catch (Throwable t) {
 
-                // Log error+throwable, but without a Toast because we're in a worker thread.
-                logger.errorLO( t.getMessage(), t);
+                logger.error( t.getMessage(), t);
                 
                 String tname = t.getClass().getName();
                 int pos = tname.lastIndexOf('.');
