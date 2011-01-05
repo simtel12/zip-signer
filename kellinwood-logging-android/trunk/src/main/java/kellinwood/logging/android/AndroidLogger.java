@@ -112,37 +112,37 @@ public class AndroidLogger extends AbstractLogger
         isDebugToastEnabled = toastState;
 	}
 
+    protected void toast( String message) 
+    {
+        try {
+            if (toastContext != null) Toast.makeText(toastContext, message, Toast.LENGTH_LONG).show();
+        }
+        catch (Throwable t) {
+            Log.e(category, message, t);
+        }
+    }
     
 	@Override
 	public void write(String level, String message, Throwable t) {
-		// TODO Auto-generated method stub
 		if (ERROR.equals(level)) {
 			if (t != null) Log.e(category, message, t);
 			else Log.e( category, message);
-			if (isErrorToastEnabled && toastContext != null) {
-				Toast.makeText(toastContext,message, Toast.LENGTH_LONG).show();
-			}
+			if (isErrorToastEnabled) toast( message);
 		}
 		else if (DEBUG.equals(level)) { 
 			if (t != null) Log.d(category, message, t);
 			else Log.d( category, message);
-			if (isDebugToastEnabled && toastContext != null) {
-				Toast.makeText(toastContext,message, Toast.LENGTH_LONG).show();	
-			}
+			if (isDebugToastEnabled) toast(message);
 		}		
 		else if (WARNING.equals(level)) { 
 			if (t != null) Log.w(category, message, t);
 			else Log.w( category, message);
-			if (isWarningToastEnabled && toastContext != null) {
-				Toast.makeText(toastContext,message, Toast.LENGTH_LONG).show();
-			}
+			if (isWarningToastEnabled) toast(message);
 		}
 		else if (INFO.equals(level)) { 
 			if (t != null) Log.i(category, message, t);
 			else Log.i( category, message);
-			if (isInfoToastEnabled && toastContext != null) {
-				Toast.makeText(toastContext,message, Toast.LENGTH_LONG).show();		
-			}
+			if (isInfoToastEnabled) toast( message);
 		}
 	}
 
