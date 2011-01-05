@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
 import kellinwood.logging.LoggerInterface;
 import kellinwood.logging.LoggerManager;
 
-public class ZioEntry {
+public class ZioEntry implements Cloneable {
 
     private ZipInput zipInput;
 
@@ -91,6 +91,22 @@ public class ZioEntry {
         this.dataPosition = 0;
         extraData = new byte[0];
         setTime( System.currentTimeMillis());
+    }
+    
+    // Return a copy with a new name
+    public ZioEntry getClonedEntry( String newName) 
+    {
+        
+        ZioEntry clone;
+        try {
+            clone = (ZioEntry)this.clone();
+        } 
+        catch (CloneNotSupportedException e) 
+        {
+            throw new IllegalStateException("clone() failed!");
+        }
+        clone.setName(newName);
+        return clone;
     }
     
     public void readLocalHeader() throws IOException
