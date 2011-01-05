@@ -45,6 +45,7 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.Security;
@@ -108,9 +109,15 @@ public class ZipSigner
         return log;
     }
 
+    public static final String MODE_AUTO_TESTKEY = "auto-testkey";
+    public static final String MODE_AUTO_NONE = "auto-none";
+    public static final String MODE_AUTO = "auto";
+    public static final String KEY_NONE = "none";
+    public static final String KEY_TESTKEY = "testkey";
+    
     // Allowable key modes.
     public static final String[] SUPPORTED_KEY_MODES =
-        new String[] { "auto-testkey", "auto", "media", "platform", "shared", "testkey"};
+        new String[] { MODE_AUTO_TESTKEY, MODE_AUTO, MODE_AUTO_NONE, "media", "platform", "shared", KEY_TESTKEY, KEY_NONE};
     
     String keymode = "testkey"; // backwards compatible with versions that only signed with this key
     
@@ -140,7 +147,7 @@ public class ZipSigner
     {
         if (getLogger().isDebugEnabled()) getLogger().debug("setKeymode: " + km);
         keymode = km;
-        if (keymode.startsWith("auto")) {
+        if (keymode.startsWith(MODE_AUTO)) {
             keySet = null;
         }
         else {
@@ -153,6 +160,107 @@ public class ZipSigner
         return SUPPORTED_KEY_MODES;
     }
 
+    
+    protected String autoDetectKey( String mode, Map<String,ZioEntry> zioEntries) 
+        throws NoSuchAlgorithmException, IOException 
+    {
+        boolean debug = getLogger().isDebugEnabled();
+        
+        if (!mode.startsWith(MODE_AUTO)) return mode;
+        
+
+        // Auto-determine which keys to use
+        String keyName = null;
+        // Start by finding the signature block file in the input.
+        for (Map.Entry<String,ZioEntry> entry : zioEntries.entrySet()) {
+            String entryName = entry.getKey();
+            if (entryName.startsWith("META-INF/") && entryName.endsWith(".RSA")) {
+                
+                // Compute MD5 of the first 1458 bytes, which is the size of our signature block templates -- 
+                // e.g., the portion of the sig block file that is the same for a given certificate.                    
+                MessageDigest md5 = MessageDigest.getInstance("MD5");
+                byte[] entryData = entry.getValue().getData();
+                if (entryData.length < 1458) break; // sig block too short to be a supported key 
+                md5.update( entryData, 0, 1458);
+                byte[] rawDigest = md5.digest();
+                
+                // Create the hex representation of the digest value
+                StringBuilder builder = new StringBuilder();
+                for( byte b : rawDigest) {
+                    builder.append( String.format("%02x", b));
+                }
+                
+                String md5String = builder.toString();
+                // Lookup the key name
+                keyName = autoKeyDetect.get( md5String); 
+                
+                
+                if (debug) {
+                    if (keyName != null) {
+                        getLogger().debug(String.format("Auto-determined key=%s using md5=%s", keyName, md5String));
+                    } else {
+                        getLogger().debug(String.format("Auto key determination failed for md5=%s", md5String));
+                    }
+                }
+                if (keyName != null) return keyName;
+            }
+        }
+        
+        if (mode.equals( MODE_AUTO_TESTKEY)) {
+            // in auto-testkey mode, fallback to the testkey if it couldn't be determined
+            if (debug) getLogger().debug("Falling back to key="+ keyName);
+            return KEY_TESTKEY;
+            
+        }
+        else if (mode.equals(MODE_AUTO_NONE)) {
+            // in auto-node mode, simply copy the input to the output when the key can't be determined.
+            if (debug) getLogger().debug("Unable to determine key, returning: " + KEY_NONE);
+            return KEY_NONE;
+        }
+        
+        return null;
+    }
+    
+    // Loads one of the built-in keys (media, platform, shared, testkey)
+    public void loadKeys( String name)
+        throws IOException, GeneralSecurityException
+    {
+        
+        keySet = loadedKeys.get(name);
+        if (keySet != null) return;
+        
+        keySet = new KeySet();
+        keySet.setName(name);
+        loadedKeys.put( name, keySet);
+        
+        if (KEY_NONE.equals(name)) return;
+        
+        progressHelper.progress(ProgressEvent.PRORITY_IMPORTANT, "Loading certificate and private key");
+        
+        // load the private key
+        URL privateKeyUrl = getClass().getResource("/keys/"+name+".pk8");
+        keySet.setPrivateKey(readPrivateKey(privateKeyUrl, null));
+
+        // load the certificate
+        URL publicKeyUrl = getClass().getResource("/keys/"+name+".x509.pem");
+        keySet.setPublicKey(readPublicKey(publicKeyUrl));
+
+        // load the signature block template
+        URL sigBlockTemplateUrl = getClass().getResource("/keys/"+name+".sbt");
+        if (sigBlockTemplateUrl != null) {
+            keySet.setSigBlockTemplate(readContentAsBytes(sigBlockTemplateUrl));
+        }
+    }
+    
+    public void setKeys( String name, X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate)
+    {
+        keySet = new KeySet( name, publicKey, privateKey, signatureBlockTemplate);
+    }
+
+    public KeySet getKeySet() {
+        return keySet;
+    }
+    
     // Allow the operation to be canceled.
     public void cancel() {
         canceled = true;
@@ -423,7 +531,20 @@ public class ZipSigner
         }
     }
 
-
+    /**
+     * Copy all the files from input to output. 
+     */
+    private void copyFiles(Map<String,ZioEntry> input, ZipOutput output)
+        throws IOException 
+    {
+        int i = 1;
+        for (ZioEntry inEntry : input.values()) {
+            if (canceled) break;
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, String.format("Copying zip entry %d of %d", i, input.size()));
+            i += 1;
+            output.write(inEntry);
+        }
+    }
 
     public void signZip( URL keystoreURL, 
             String keystoreType,
@@ -459,40 +580,7 @@ public class ZipSigner
         }
     }
 
-    // Loads one of the built-in keys (media, platform, shared, testkey)
-    public void loadKeys( String name)
-        throws IOException, GeneralSecurityException
-    {
-        keySet = loadedKeys.get(name);
-        if (keySet != null) return;
-        
-        progressHelper.progress(ProgressEvent.PRORITY_IMPORTANT, "Loading certificate and private key");
-        
-        keySet = new KeySet();
-        keySet.setName(name);
-        
-        // load the private key
-        URL privateKeyUrl = getClass().getResource("/keys/"+name+".pk8");
-        keySet.setPrivateKey(readPrivateKey(privateKeyUrl, null));
 
-        // load the certificate
-        URL publicKeyUrl = getClass().getResource("/keys/"+name+".x509.pem");
-        keySet.setPublicKey(readPublicKey(publicKeyUrl));
-
-        // load the signature block template
-        URL sigBlockTemplateUrl = getClass().getResource("/keys/"+name+".sbt");
-        if (sigBlockTemplateUrl != null) {
-            keySet.setSigBlockTemplate(readContentAsBytes(sigBlockTemplateUrl));
-        }
-        
-        loadedKeys.put( name, keySet);
-
-    }
-    
-    public void setKeys( String name, X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate)
-    {
-        keySet = new KeySet( name, publicKey, privateKey, signatureBlockTemplate);
-    }
     
 
     /** Sign the input with the default test key and certificate.  
@@ -537,75 +625,36 @@ public class ZipSigner
         
         progressHelper.initProgress();
         if (keySet == null) {
-            if (!keymode.startsWith("auto")) 
+            if (!keymode.startsWith(MODE_AUTO)) 
                 throw new IllegalStateException("No keys configured for signing the file!");
             
             // Auto-determine which keys to use
-            String keyName = null;
-            // Start by finding the signature block file in the input.
-            for (Map.Entry<String,ZioEntry> entry : zioEntries.entrySet()) {
-                String entryName = entry.getKey();
-                if (entryName.startsWith("META-INF/") && entryName.endsWith(".RSA")) {
-                    
-                    // Compute MD5 of the first 1458 bytes, which is the size of our signature block templates -- 
-                    // e.g., the portion of the sig block file that is the same for a given certificate.                    
-                    MessageDigest md5 = MessageDigest.getInstance("MD5");
-                    md5.update( entry.getValue().getData(), 0, 1458);
-                    byte[] rawDigest = md5.digest();
-                    
-                    // Create the hex representation of the digest value
-                    StringBuilder builder = new StringBuilder();
-                    for( byte b : rawDigest) {
-                        builder.append( String.format("%02x", b));
-                    }
-                    
-                    String md5String = builder.toString();
-                    // Lookup the key name
-                    keyName = autoKeyDetect.get( md5String); 
-                    
-                    // Notify auto key observers of the key which we'll be signing with.
-                    if (keyName != null) {
-                        autoKeyObservable.notifyObservers(keyName);
-                    }
-                
-                    if (debug) {
-                        if (keyName != null)
-                            getLogger().debug(String.format("Auto-determined key=%s using md5=%s", keyName, md5String));
-                        else {
-                            getLogger().debug(String.format("Auto key determination failed for md5=%s", md5String));
-                        }
-                    }
-                    break; // exit the for-loop
-                }
-            }
-            if (keyName == null) {
-                // in auto-testkey mode, fallback to the testkey if it couldn't be determined
-                if (keymode.equals("auto-testkey")) {
-                    if (debug) getLogger().debug(String.format("Falling back to key=%s", keyName));
-                    keyName = "testkey";
-                    autoKeyObservable.notifyObservers(keyName);
-                }
-                else {
-                    String shortName = outputZipFilename;
-                    if (shortName == null) shortName = "";
-                    int pos = shortName.lastIndexOf("/");
-                    if (pos > 0) shortName = shortName.substring(pos+1);
-                    throw new IllegalStateException("Unable to auto-determine key for signing " + shortName);
-                }
-            }
-            loadKeys( keyName);
+            String keyName = this.autoDetectKey( keymode, zioEntries);
+            if (keyName == null) 
+                throw new AutoKeyException("Unable to auto-select key for signing " + new File( outputZipFilename).getName());
             
+            autoKeyObservable.notifyObservers(keyName);
+
+            loadKeys( keyName);
             
         }
 
+
+        
         ZipOutput zipOutput = null;
 
         try {
-            // Assume the certificate is valid for at least an hour.
-            long timestamp = keySet.getPublicKey().getNotBefore().getTime() + 3600L * 1000;
+
 
             zipOutput = new ZipOutput( outputStream);
 
+            if (KEY_NONE.equals(keySet.getName())) {
+                progressHelper.setProgressTotalItems(zioEntries.size());
+                progressHelper.setProgressCurrentItem(0);                
+                copyFiles(zioEntries, zipOutput);
+                return;
+            }
+            
             // Calculate total steps to complete for accurate progress percentages.
             int progressTotalItems = 0;
             for (ZioEntry entry: zioEntries.values()) {
@@ -622,7 +671,9 @@ public class ZipSigner
             progressHelper.setProgressTotalItems(progressTotalItems);
             progressHelper.setProgressCurrentItem(0);
 
-
+            // Assume the certificate is valid for at least an hour.
+            long timestamp = keySet.getPublicKey().getNotBefore().getTime() + 3600L * 1000;
+            
             // MANIFEST.MF
             // progress(ProgressEvent.PRORITY_NORMAL, JarFile.MANIFEST_NAME);
             Manifest manifest = addDigestsToManifest(zioEntries);
@@ -657,7 +708,7 @@ public class ZipSigner
             generateSignatureFile(manifest, out);
             if (canceled) return;
             byte[] sfBytes = out.toByteArray();
-            if (getLogger().isDebugEnabled()) {
+            if (debug) {
                 getLogger().debug( "Signature File: \n" + new String( sfBytes) + "\n" + 
                         HexDumpEncoder.encode( sfBytes));
             }
@@ -666,7 +717,7 @@ public class ZipSigner
             signature.update(sfBytes);
             byte[] signatureBytes = signature.sign();
 
-            if (getLogger().isDebugEnabled()) {
+            if (debug) {
 
                 MessageDigest md = MessageDigest.getInstance("SHA1");
                 md.update( sfBytes);
@@ -713,10 +764,10 @@ public class ZipSigner
             // Everything else
             copyFiles(manifest, zioEntries, zipOutput, timestamp);
             if (canceled) return;
-            zipOutput.close();
+            
         }
         finally {
-
+            zipOutput.close();
             if (canceled) {
                 try {
                     if (outputZipFilename != null) new File( outputZipFilename).delete();
