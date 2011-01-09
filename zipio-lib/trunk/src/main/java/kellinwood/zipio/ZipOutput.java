@@ -59,7 +59,7 @@ public class ZipOutput
     {
         if (ofile.exists()) ofile.delete();
         out = new FileOutputStream( ofile);
-        ZipListingHelper.listHeader( getLogger());
+        if (getLogger().isDebugEnabled()) ZipListingHelper.listHeader( getLogger());
         
     }
 
@@ -82,7 +82,7 @@ public class ZipOutput
         entry.writeLocalEntry( this);
         entriesWritten.add( entry);
         namesWritten.add( entryName);
-        ZipListingHelper.listEntry( getLogger(), entry);
+        if (getLogger().isDebugEnabled()) ZipListingHelper.listEntry( getLogger(), entry);
         
     }
 

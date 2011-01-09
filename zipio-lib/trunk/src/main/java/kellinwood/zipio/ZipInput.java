@@ -61,6 +61,10 @@ public class ZipInput
     public String getFilename() {
         return inputFilename;
     }
+
+    public long getFileLength() {
+        return fileLength;
+    }
     
     public static ZipInput read( String filename) throws IOException {
         ZipInput zipInput = new ZipInput( filename);
@@ -194,6 +198,9 @@ public class ZipInput
         return buffer;
     }
 
+    public int read( byte[] b, int offset, int length) throws IOException {
+        return in.read( b, offset, length);
+    }
 
 }
 

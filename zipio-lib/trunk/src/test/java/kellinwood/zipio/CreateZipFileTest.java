@@ -81,6 +81,37 @@ public class CreateZipFileTest extends AbstractTest {
     }
     
     @Test
+    public void createZipTest2() {
+        
+        try {
+            setupLogging();
+
+            // Test the two argument variation of the ZipEntry constructor which is used to add an existing file to the zip.
+            
+            String siblingFile = getClass().getResource("/simple_test.zip").getFile(); 
+            File sfile = new File(siblingFile);
+            File outputFile = new File(sfile.getParent(), "test_create2.zip");
+            
+            ZipOutput zipOutput = new ZipOutput( outputFile);
+            
+            ZioEntry entry = new ZioEntry( "simple_test.zip", siblingFile);
+            zipOutput.write(entry);
+            
+            zipOutput.close();
+
+            // verify the result
+            ZipInput zipInput = ZipInput.read( outputFile.getAbsolutePath());
+            
+            entry = zipInput.getEntry("simple_test.zip");
+            assertNotNull( entry);
+        }
+        catch (Exception x) {
+            getLogger().error( x.getMessage(), x);
+            fail( x.getClass().getName() + ": " + x.getMessage());
+        }      
+    }
+    
+    @Test
     public void mergeZipTest() {
         
         try {

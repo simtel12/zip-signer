@@ -19,9 +19,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.util.Date;
+import java.util.zip.CRC32;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -76,6 +78,43 @@ public class ZioEntry implements Cloneable {
         extraData = new byte[0];
         setTime( System.currentTimeMillis());
     }
+
+    
+    public ZioEntry( String name, String sourceDataFile)
+        throws IOException
+    {
+        zipInput = new ZipInput( sourceDataFile);
+        filename = name;
+        fileComment = "";
+        this.compression = 0;
+        this.size = (int)zipInput.getFileLength();
+        this.compressedSize = this.size;
+
+        if (getLogger().isDebugEnabled()) 
+            getLogger().debug(String.format("Computing CRC for %s, size=%d",sourceDataFile,size));
+        
+        // compute CRC
+        CRC32 crc = new CRC32();
+
+        byte[] buffer = new byte[8096];
+
+        int numRead = 0;
+        while (numRead != size) {
+            int count = zipInput.read( buffer, 0, Math.min( buffer.length, (this.size - numRead)));
+            if (count > 0) {
+                crc.update( buffer, 0, count);
+                numRead += count;
+            }
+        }
+
+        this.crc32 = (int)crc.getValue();
+
+        zipInput.seek(0);
+        this.dataPosition = 0;
+        extraData = new byte[0];
+        setTime( new File(sourceDataFile).lastModified());
+    }
+    
     
 
     public ZioEntry( String name, String sourceDataFile, short compression, int crc32, int compressedSize, int size)
@@ -90,7 +129,7 @@ public class ZioEntry implements Cloneable {
         this.size = size;
         this.dataPosition = 0;
         extraData = new byte[0];
-        setTime( System.currentTimeMillis());
+        setTime( new File(sourceDataFile).lastModified());
     }
     
     // Return a copy with a new name
