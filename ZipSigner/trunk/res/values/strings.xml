@@ -21,7 +21,7 @@
 	
 	<string name="AboutZipSignerDocumentation">Visit the webpage</string>
 	<string name="AboutZipSignerDocUrlPattern">webpage</string>
-	<string name="AboutZipSignerDocUrl">http://code.google.com/p/zip-signer/wiki/ZipSigner</string>
+	<string name="AboutZipSignerDocUrl">http://sites.google.com/site/zipsigner</string>
 		
 	<string name="CloseButtonLabel">Close</string>
 	<string name="CancelButtonLabel">Cancel</string>
