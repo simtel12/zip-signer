@@ -602,8 +602,11 @@ public class ZipSigner
     public void signZip( String inputZipFilename, String outputZipFilename)
         throws IOException, GeneralSecurityException
     {
-        if (inputZipFilename.equals( outputZipFilename)) {
-            throw new IllegalArgumentException("Input and output filenames are the same.  Specify a different name for the output.");
+        File inFile = new File( inputZipFilename).getCanonicalFile();
+        File outFile = new File( outputZipFilename).getCanonicalFile();
+        
+        if (inFile.equals(outFile)) {
+            throw new IllegalArgumentException("Input and output files are the same.  Specify a different name for the output.");
         }        
 
         progressHelper.initProgress();        
