@@ -69,7 +69,7 @@ public class Main
             Option providerOption = new Option("p", "provider", false, "Alternate security provider class - e.g., 'org.bouncycastle.jce.provider.BouncyCastleProvider'");
             providerOption.setArgs( 1);
 
-            Option modeOption = new Option("m", "keymode", false, "Keymode one of: auto, auto-testkey, media, platform, shared, testkey");
+            Option modeOption = new Option("m", "keymode", false, "Keymode one of: auto, auto-testkey, auto-none, media, platform, shared, testkey, none");
             modeOption.setArgs( 1);
             
             Option keyOption = new Option("k", "key", false, "PCKS#8 encoded private key file");
