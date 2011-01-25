@@ -20,10 +20,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 import kellinwood.logging.LoggerInterface;
@@ -79,6 +84,27 @@ public class ZipInput
     
     public Map<String,ZioEntry> getEntries() {
         return zioEntries;
+    }
+    
+    /** Returns the names of immediate children in the directory with the given name.
+     *  The path value must end with a "/" character.  Use a value of "/" 
+     *  to get the root entries.
+     */
+    public Collection<String> list(String path) 
+    {
+        if (!path.endsWith("/")) throw new IllegalArgumentException("Invalid path -- does not end with '/'");
+        
+        if (path.startsWith("/")) path = path.substring(1);
+       
+        Pattern p = Pattern.compile( String.format("^%s([^/]+/?).*", path));
+        
+        Set<String> names = new TreeSet<String>();
+        
+        for (String name : zioEntries.keySet()) {
+            Matcher m = p.matcher(name);
+            if (m.matches()) names.add(m.group(1));
+        }
+        return names;
     }
     
     public Manifest getManifest() throws IOException {
