@@ -1,10 +1,9 @@
-package kellinwood.zipsigner.filebrowser;
+package kellinwood.zipsigner2.filebrowser;
 
-import kellinwood.zipsigner.R;
+import kellinwood.zipsigner2.R;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -12,9 +11,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 
-import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;

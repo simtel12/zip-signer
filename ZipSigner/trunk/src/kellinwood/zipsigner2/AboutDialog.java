@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kellinwood.zipsigner;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+package kellinwood.zipsigner2;
 
 import android.app.Dialog;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.text.SpannableString;
-import android.text.util.Linkify;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kellinwood.zipsigner;
+package kellinwood.zipsigner2;
 
 import java.io.File;
-import java.net.URL;
 
 import kellinwood.security.zipsigner.ZipSigner;
-import kellinwood.zipsigner.R;
+import kellinwood.zipsigner2.R;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
 import kellinwood.logging.android.AndroidLoggerFactory;
