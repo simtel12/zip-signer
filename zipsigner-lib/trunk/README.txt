@@ -10,7 +10,7 @@ The source to this library is licensed under Apache 2.0.
 The primary class is kellinwood.security.zipsigner.ZipSigner.  It is
 is a heavily modified version of Google's SignApk. Modifications
 include the addition of convienience methods, a progress listener API,
-default keys/certificates built into the classpath, and a signature
+default keys/certificates built into the classpath, and an
 implementation that generates signatures recognized by the "install
 update.zip file" feature of the recovery programs.
 
