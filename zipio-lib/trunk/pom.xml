@@ -3,14 +3,14 @@
 
 	<groupId>kellinwood.android</groupId>
 	<artifactId>zipio-lib</artifactId>
-	<version>1.5-SNAPSHOT</version>
+	<version>1.5</version>
 	<packaging>jar</packaging>
 
 	<name>zipio-lib</name>
 	<url>http://code.google.com/p/zip-signer/</url>
 
 	<scm>
-		<developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/zipio-lib/trunk</developerConnection>
+		<developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/zipio-lib/tags/zipio-lib-1.5</developerConnection>
 	</scm>
 	<distributionManagement>
 		<repository>
