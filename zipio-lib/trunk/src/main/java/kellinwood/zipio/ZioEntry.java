@@ -224,8 +224,9 @@ public class ZioEntry implements Cloneable {
         dataPosition = input.getFilePointer();
         if (debug) log.debug(String.format("Data position: 0x%08x",dataPosition));
 
-        if (generalPurposeBits != 0x0000 && generalPurposeBits != 0x0008) {
-            throw new IllegalStateException("Can't handle general purpose bits != 0x0000 && bits != 0x0008");
+        // Bits 1, 2, and 3 are allowed to be set (first bit is bit zero).  Any others are a problem.
+        if ((generalPurposeBits & 0xFFF1) != 0x0000) {
+            throw new IllegalStateException("Can't handle general purpose bits == "+String.format("0x%04x",generalPurposeBits));
         }
 
     }
@@ -354,8 +355,9 @@ public class ZioEntry implements Cloneable {
         // 6    2   General purpose bit flag
         generalPurposeBits = input.readShort();
         if (debug) log.debug(String.format("General purpose bits: 0x%04x", generalPurposeBits));
-        if (generalPurposeBits != 0 && generalPurposeBits != 0x0008) {
-            throw new IllegalStateException("Can't handle general purpose bits != 0x0000 && bits != 0x0008");
+        // Bits 1, 2, and 3 are allowed to be set (first bit is bit zero).  Any others are a problem.
+        if ((generalPurposeBits & 0xFFF1) != 0x0000) {
+            throw new IllegalStateException("Can't handle general purpose bits == "+String.format("0x%04x",generalPurposeBits));
         }
 
         // 8    2   Compression method
