@@ -51,7 +51,9 @@ public class AndroidFileBrowser extends ListActivity {
 
         Intent i = getIntent();
         String startPath = i.getExtras().getString("startPath");
+        if (startPath == null) startPath = "/";
         reason = i.getExtras().getString("reason");
+        if (reason == null) reason = "";
         browseTo(new File(startPath));
         if (directoryEntries.size() > 0) this.setSelection(0);
     }
