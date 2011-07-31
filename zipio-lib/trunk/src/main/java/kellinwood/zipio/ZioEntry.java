@@ -224,11 +224,6 @@ public class ZioEntry implements Cloneable {
         dataPosition = input.getFilePointer();
         if (debug) log.debug(String.format("Data position: 0x%08x",dataPosition));
 
-        // Bits 1, 2, and 3 are allowed to be set (first bit is bit zero).  Any others are a problem.
-        if ((generalPurposeBits & 0xFFF1) != 0x0000) {
-            throw new IllegalStateException("Can't handle general purpose bits == "+String.format("0x%04x",generalPurposeBits));
-        }
-
     }
 
     public void writeLocalEntry( ZipOutput output) throws IOException
@@ -355,8 +350,8 @@ public class ZioEntry implements Cloneable {
         // 6    2   General purpose bit flag
         generalPurposeBits = input.readShort();
         if (debug) log.debug(String.format("General purpose bits: 0x%04x", generalPurposeBits));
-        // Bits 1, 2, and 3 are allowed to be set (first bit is bit zero).  Any others are a problem.
-        if ((generalPurposeBits & 0xFFF1) != 0x0000) {
+        // Bits 1, 2, 3, and 11 are allowed to be set (first bit is bit zero).  Any others are a problem.
+        if ((generalPurposeBits & 0xF7F1) != 0x0000) {
             throw new IllegalStateException("Can't handle general purpose bits == "+String.format("0x%04x",generalPurposeBits));
         }
 
@@ -416,7 +411,7 @@ public class ZioEntry implements Cloneable {
         fileComment = input.readString( fileCommentLen);
         if (debug) log.debug("File comment: " + fileComment);
 
-        generalPurposeBits = 0; // Don't write a data descriptor
+        generalPurposeBits = (short)(generalPurposeBits & 0x0800); // Don't write a data descriptor, preserve UTF-8 encoded filename bit
         
         // Don't write zero-length entries with compression.
         if (size == 0) {
