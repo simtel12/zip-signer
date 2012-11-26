@@ -10,6 +10,11 @@
     <name>zipsigner-cmdline</name>
     <url>http://code.google.com/p/zip-signer</url>
 
+
+    <scm>
+        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/zipsigner-cmdline/trunk</developerConnection>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
