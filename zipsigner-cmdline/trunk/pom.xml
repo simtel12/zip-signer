@@ -28,7 +28,7 @@
         <dependency>
             <groupId>kellinwood.android</groupId>
             <artifactId>zipsigner-lib</artifactId>
-            <version>1.9-SNAPSHOT</version>
+            <version>1.11</version>
         </dependency>
         <dependency>
             <groupId>kellinwood.android</groupId>
@@ -56,6 +56,18 @@
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>kellinwood.zipsigner.cmdline.Main</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
             <plugin>
