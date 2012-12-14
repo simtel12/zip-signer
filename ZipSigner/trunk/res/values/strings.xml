@@ -9,22 +9,30 @@
 	<string name="SignedZipLabel">Signed Output File</string>	
 	<string name="KeyModeLabel">Key/mode: </string>
 	<string name="SignButtonLabel">Sign The File</string>
+    <string name="BrowserSelectInput">select input</string>
+    <string name="BrowserSelectOutput">select output</string>
+    <string name="KeySelectionError">Key Selection Error</string>
+    <string name="FileSigningSuccess">File signing operation succeeded!</string>
+    <string name="FileSigningCancelled">File signing CANCELED!</string>
+    <string name="ExtStorageIsReadOnly">ERROR: External storage is mounted read-only</string>
+    <string name="SigningWithKey">Signing with key:</string>
 	
 	<string name="AboutZipSignerTitle">About</string>
 	<string name="AboutZipSignerBanner">Zip Signer 2</string>
 	<string name="AboutZipSignerVersionTemplate">Version: %s</string>
 	<string name="AboutZipSignerDescription">Signs zip, apk, and/or jar files.</string>
 	<string name="AboutZipSignerAuthor">Author: Ken Ellinwood</string>
-	<string name="AboutZipSignerCopyright">Copyright 2010. All rights reserved.</string>
+	<string name="AboutZipSignerCopyright">Copyright 2010,2012. All rights reserved.</string>
 	<string name="AboutFmAttribution">File browser source based on http://www.anddev.org/android_filebrowser__v20-t101.html</string>
 	<string name="AboutFmIconsAttribution">File browser icons obtained from the Tango Icon Gallery, http://tango.freedesktop.org</string>
 	
 	<string name="AboutZipSignerDocumentation">Visit the webpage</string>
 	<string name="AboutZipSignerDocUrlPattern">webpage</string>
-	<string name="AboutZipSignerDocUrl">http://sites.google.com/site/zipsigner</string>
-		
+    <string name="AboutZipSignerDocUrl">http://sites.google.com/site/zipsigner</string>
+
 	<string name="CloseButtonLabel">Close</string>
 	<string name="CancelButtonLabel">Cancel</string>
+	<string name="OkButtonLabel">OK</string>
 	
 	
 	<string name="SigningZipLabel">Signing %s...</string>
@@ -32,4 +40,26 @@
 	<!--  Built-in file manager string values -->
     <string name="up_one_level">..</string>
     <string name="current_dir">.</string>	
+    
+    <!--  menu string values -->
+    <string name="MenuWebSite">Web Site</string>
+    <string name="MenuManageKeys">My Keys</string>
+    <string name="MenuDonate">Donate</string>
+    <string name="MenuAbout">About</string>
+    
+    <!-- Manage Keys string values -->
+    <string name="AddKeystoreButtonLabel">Register keystore...</string>
+    <string name="RememberThisPassword">Remember this password</string>
+    <string name="EnterKeystorePassword">Enter Keystore Password</string>
+    <string name="WrongKeystorePassword">Wrong Keystore Password</string>
+    <string name="UnregisterMenuItemLabel">Unregister keystore</string>
+    <string name="RememberPasswordMenuItemLabel">Remember password...</string>
+    <string name="ForgetPasswordMenuItemLabel">Forget password</string>
+    <string name="DisplayNameMenuItemLabel">Display name...</string>
+    <string name="EnterKeyPassword">Enter Key Password</string>
+    <string name="WrongKeyPassword">Wrong Key Password</string>
+    <string name="PasswordIsRemembered">(password remembered)</string>
+    <string name="PasswordIsNotRemembered">(password not remembered)</string>
+
+
 </resources>

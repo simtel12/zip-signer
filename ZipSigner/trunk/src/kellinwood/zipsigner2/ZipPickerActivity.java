@@ -17,8 +17,8 @@ package kellinwood.zipsigner2;
 
 import java.io.File;
 
-import kellinwood.security.zipsigner.ZipSigner;
-import kellinwood.zipsigner2.R;
+import android.os.Handler;
+import android.widget.*;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
 import kellinwood.logging.android.AndroidLoggerFactory;
@@ -38,11 +38,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Spinner;
-import android.widget.Toast;
+
 
 /** App for signing zip, apk, and/or jar files on an Android device. 
  *  This activity allows the input/output files to be selected and shows
@@ -57,11 +53,14 @@ public class ZipPickerActivity extends Activity {
     protected static final int REQUEST_CODE_PICK_INOUT_FILE = 3;
 
     protected static final int REQUEST_CODE_SIGN_FILE = 80701;
+    protected static final int REQUEST_CODE_MANAGE_KEYS = 80702;
 
     private static final String PREFERENCE_IN_FILE = "input_file";
     private static final String PREFERENCE_OUT_FILE = "output_file";
+    private static final String PREFERENCE_KEY_INDEX = "key_index";
 
     AndroidLogger logger = null;
+    KeyListSpinnerAdapter keyModeSpinnerAdapter = null;
 
     /** Called when the activity is first created. */
     @Override
@@ -88,9 +87,10 @@ public class ZipPickerActivity extends Activity {
         // Strip /mnt from /sdcard
         if (extStorageDir.startsWith("/mnt/sdcard")) extStorageDir = extStorageDir.substring(4);
         
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         String inputFile = prefs.getString(PREFERENCE_IN_FILE, extStorageDir + "/unsigned.zip");
-        String outputFile = prefs.getString(PREFERENCE_OUT_FILE, extStorageDir + "/signed.zip");        
+        String outputFile = prefs.getString(PREFERENCE_OUT_FILE, extStorageDir + "/signed.zip");
+        int keyIndex = prefs.getInt(PREFERENCE_KEY_INDEX, 0);
 
         EditText inputText = (EditText)findViewById(R.id.InFileEditText);
         inputText.setText( inputFile); 
@@ -120,14 +120,24 @@ public class ZipPickerActivity extends Activity {
         });        
         
         Spinner spinner = (Spinner) findViewById(R.id.KeyModeSpinner);
-        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>( this, android.R.layout.simple_spinner_item);
-        for (String mode : ZipSigner.SUPPORTED_KEY_MODES) {
-            adapter.add(mode);
-        }
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
+        keyModeSpinnerAdapter = KeyListSpinnerAdapter.createInstance(this, android.R.layout.simple_spinner_item);
+        keyModeSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(keyModeSpinnerAdapter);
+        if (keyIndex >= keyModeSpinnerAdapter.getCount()) keyIndex = 0;
+        spinner.setSelection(keyIndex);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view,
+                                       int position, long id) {
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putInt( PREFERENCE_KEY_INDEX, position);
+                editor.commit();
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> adapter) {
+            }
+        });
 
-        
     }
 
     private String getInputFilename() {
@@ -153,7 +163,7 @@ public class ZipPickerActivity extends Activity {
 
             // Refuse to do anything if the external storage device is not writable (external storage = /sdcard).
             if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(Environment.getExternalStorageState())) {
-                logger.error("ERROR: External storage is mounted read-only");
+                logger.error( getResources().getString(R.string.ExtStorageIsReadOnly));
                 return;
             }
 
@@ -165,9 +175,10 @@ public class ZipPickerActivity extends Activity {
             i.putExtra("inputFile", inputFile);
             i.putExtra("outputFile", outputFile);
 
-            String keyMode = (String)((Spinner)this.findViewById(R.id.KeyModeSpinner)).getSelectedItem();
-            logger.debug(keyMode);
-            i.putExtra("keyMode", keyMode);
+            KeyEntry keyEntry = (KeyEntry)((Spinner)this.findViewById(R.id.KeyModeSpinner)).getSelectedItem();
+            logger.debug(keyEntry.getDisplayName() + ", id="+keyEntry.getId());
+            i.putExtra("keyMode", keyEntry.getDisplayName());
+            i.putExtra("customKeyId", keyEntry.getId());
 
             // If "showProgressItems" is true, then the ZipSignerActivity displays the names of files in the 
             // zip as they are generated/copied during the signature process.
@@ -179,7 +190,6 @@ public class ZipPickerActivity extends Activity {
             
             // Activity is started and the result is returned via a call to onActivityResult(), below.
             startActivityForResult(i, REQUEST_CODE_SIGN_FILE);
-
 
         }
         catch (Throwable x) {
@@ -201,8 +211,19 @@ public class ZipPickerActivity extends Activity {
         switch (item.getItemId()) {
         case R.id.MenuItemShowHelp:
             String targetURL = getString(R.string.AboutZipSignerDocUrl);
-            Intent i = new Intent( Intent.ACTION_VIEW, Uri.parse(targetURL));
-            startActivity(i);
+            Intent wsi = new Intent( Intent.ACTION_VIEW, Uri.parse(targetURL));
+            startActivity(wsi);
+            return true;
+        case R.id.MenuItemDonate:
+            String donateURL = "https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=24Y8S9UH5ETRU";
+            Intent di = new Intent( Intent.ACTION_VIEW, Uri.parse(donateURL));
+            startActivity(di);
+            return true;
+        case R.id.MenuItemManageKeys:
+            // Launch the ZipSignerActivity to perform the signature operation.
+            Intent mki = new Intent("kellinwood.zipsigner.action.MANAGE_KEYS");
+            // Activity is started and the result is returned via a call to onActivityResult(), below.
+            startActivityForResult(mki, REQUEST_CODE_MANAGE_KEYS);            
             return true;
         case R.id.MenuItemAbout:
             AboutDialog.show(this);
@@ -270,7 +291,10 @@ public class ZipPickerActivity extends Activity {
                 }               
                 break;                
             case REQUEST_CODE_SIGN_FILE:
-                logger.info("File signing operation succeeded!");
+                logger.info(getResources().getString( R.string.FileSigningSuccess));
+                break;
+            case REQUEST_CODE_MANAGE_KEYS:
+                keyModeSpinnerAdapter.changeData();
                 break;
             default:
                 logger.error("onActivityResult, RESULT_OK, unknown requestCode " + requestCode);
@@ -280,14 +304,17 @@ public class ZipPickerActivity extends Activity {
         case RESULT_CANCELED:   // signing operation canceled
             switch (requestCode) {
             case REQUEST_CODE_SIGN_FILE:
-                logger.info("File signing CANCELED!");
+                logger.info(getResources().getString(R.string.FileSigningCancelled));
                 break;
             case REQUEST_CODE_PICK_FILE_TO_OPEN:
                 break;
             case REQUEST_CODE_PICK_FILE_TO_SAVE:
                 break;
             case REQUEST_CODE_PICK_INOUT_FILE:
-                break;                
+                break;
+            case REQUEST_CODE_MANAGE_KEYS:
+                keyModeSpinnerAdapter.changeData();
+                break;
             default:
                 logger.error("onActivityResult, RESULT_CANCELED, unknown requestCode " + requestCode);
                 break;
@@ -310,7 +337,7 @@ public class ZipPickerActivity extends Activity {
             case REQUEST_CODE_SIGN_FILE:
                 // TODO display alert dialog?
                 String errorMessage = data.getStringExtra("errorMessage");
-                alertDialog("Key Selection Error", errorMessage);
+                alertDialog(getResources().getString(R.string.KeySelectionError), errorMessage);
                 break;
             default:
                 logger.error("onActivityResult, RESULT_FIRST_USER+1, unknown requestCode " + requestCode);
@@ -323,7 +350,7 @@ public class ZipPickerActivity extends Activity {
 
     }
 
-    private void launchFileBrowser( String reason, int requestCode, String samplePath)
+    public static void launchFileBrowser( Activity parentActivity, String reason, int requestCode, String samplePath)
     {
         try
         {
@@ -337,24 +364,24 @@ public class ZipPickerActivity extends Activity {
             Intent intent = new Intent("kellinwood.zipsigner.action.BROWSE_FILE");
             intent.putExtra("startPath", startPath);
             intent.putExtra("reason", reason);
-            startActivityForResult(intent, requestCode);
+            parentActivity.startActivityForResult(intent, requestCode);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, e.getMessage(), 0).show();
+            Toast.makeText(parentActivity, e.getMessage(), 0).show();
         }
     }
 
 
     private void pickInputFile(){
-        launchFileBrowser( "select input", REQUEST_CODE_PICK_FILE_TO_OPEN, getInputFilename());
+        launchFileBrowser( this, getResources().getString(R.string.BrowserSelectInput), REQUEST_CODE_PICK_FILE_TO_OPEN, getInputFilename());
     }
 
 
     private void pickOutputFile() {
-        launchFileBrowser( "select output", REQUEST_CODE_PICK_FILE_TO_SAVE, getOutputFilename());
+        launchFileBrowser( this, getResources().getString(R.string.BrowserSelectOutput), REQUEST_CODE_PICK_FILE_TO_SAVE, getOutputFilename());
     }
 
     private void pickInputOutputFiles() {
-        launchFileBrowser( "select input", REQUEST_CODE_PICK_INOUT_FILE, getOutputFilename());
+        launchFileBrowser( this, getResources().getString(R.string.BrowserSelectInput), REQUEST_CODE_PICK_INOUT_FILE, getOutputFilename());
     }
 
 

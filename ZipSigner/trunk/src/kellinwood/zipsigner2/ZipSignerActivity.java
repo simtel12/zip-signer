@@ -15,6 +15,9 @@
  */
 package kellinwood.zipsigner2;
 
+import java.io.File;
+import java.security.UnrecoverableKeyException;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -39,6 +42,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import kellinwood.zipsigner2.customkeys.*;
 
 
 /** Demo app for signing zip, apk, and/or jar files on an Android device. */
@@ -54,13 +58,32 @@ public class ZipSignerActivity extends Activity {
     private static final int MESSAGE_TYPE_SIGNING_COMPLETE = 2;
     private static final int MESSAGE_TYPE_SIGNING_CANCELED = 3;
     private static final int MESSAGE_TYPE_SIGNING_ERROR = 4;    
-    private static final int MESSAGE_TYPE_ANNOUNCE_KEY = 5;    
-    private static final int MESSAGE_TYPE_AUTO_KEY_FAIL = 6;    
+    private static final int MESSAGE_TYPE_ANNOUNCE_KEY = 5;
+    private static final int MESSAGE_TYPE_AUTO_KEY_FAIL = 6;
+    private static final int MESSAGE_TYPE_BAD_PASSWORD = 7;
+    private static final int MESSAGE_TYPE_KEY_PASSWORD = 8;
 
     private static final String MESSAGE_KEY = "message";
 
     private int AUTO_KEY_FAIL_RESULT = RESULT_FIRST_USER;
-    
+
+    String inputFile;
+    String outputFile;
+    String keyMode;
+    String keyAlias;
+    String keystorePath;
+    String keystorePassword;
+    String keyPassword;
+    boolean showProgressItems;
+    boolean builtInKey;
+
+    private String getStringExtra( Intent i, String extraName, String defaultValue) {
+
+        String value = i.getStringExtra( extraName);
+        if (value == null) return defaultValue;
+        return value;
+    }
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,16 +107,66 @@ public class ZipSignerActivity extends Activity {
         Button cancelButton = (Button)findViewById(R.id.SigningZipCancelButton);
         cancelButton.setOnClickListener( new OnClickListener() {
             public void onClick(View arg0) {
-                signerThread.cancel();
+                if (signerThread != null) signerThread.cancel();
             }
 
         });
 
         Intent intent = getIntent();
         AUTO_KEY_FAIL_RESULT = intent.getExtras().getInt("autoKeyFailRC", RESULT_FIRST_USER);
-        
-        signerThread = new SignerThread( handler, intent);
-        signerThread.start();
+        showProgressItems = Boolean.valueOf( getStringExtra(intent, "showProgressItems", "true"));
+        inputFile = intent.getStringExtra("inputFile");
+        outputFile = intent.getStringExtra("outputFile");
+        keyMode = intent.getStringExtra("keyMode");
+        if (keyMode == null) keyMode = "testkey"; // backwards compatible.
+
+        builtInKey = false;
+        keyMode = intent.getStringExtra("keyMode");
+        for (String builtInKeyName : ZipSigner.SUPPORTED_KEY_MODES){
+            if (keyMode.equals( builtInKeyName)) builtInKey = true;
+            break;
+        }
+
+        Alias selectedAlias = null;
+        if (!builtInKey) {
+            long customKeyId = intent.getLongExtra("customKeyId",-1L);
+            CustomKeysDataSource customKeysDataSource = new CustomKeysDataSource(ZipSignerActivity.this);
+            customKeysDataSource.open();
+            List<Keystore> keystoreList = customKeysDataSource.getAllKeystores();
+            customKeysDataSource.close();
+
+            boolean useIdMatch = (customKeyId >= 0);
+
+            for (Keystore keystore : keystoreList) {
+                for (Alias alias : keystore.getAliases()) {
+                    if (useIdMatch) {
+                        if (alias.getId() == customKeyId) {
+                            selectedAlias = alias;
+                        }
+                    } else {
+                        if (selectedAlias == null && keyMode.equals(alias.getDisplayName()))
+                            selectedAlias = alias;
+                    }
+                }
+            }
+            if (selectedAlias == null) {
+                // TODO: return error
+                return;
+            }
+            keyAlias = selectedAlias.getName();
+
+            keyPassword = selectedAlias.getPassword();
+            keystorePassword = selectedAlias.getKeystore().getPassword();
+            keystorePath = selectedAlias.getKeystore().getPath();
+        }
+
+        if (builtInKey || keyPassword != null) {
+            signerThread = new SignerThread( handler);
+            signerThread.start();
+        } else {
+            EnterPasswordDialog.show( this, handler, getResources().getString(R.string.EnterKeyPassword), MESSAGE_TYPE_KEY_PASSWORD,
+                keystorePath, 0, keyAlias);
+        }
     }
 
     // Define the Handler that receives messages from the thread and update the progress
@@ -130,7 +203,7 @@ public class ZipSignerActivity extends Activity {
                 break;
             case MESSAGE_TYPE_ANNOUNCE_KEY:
                 msgText = msg.getData().getString( MESSAGE_KEY);
-                logger.info("Signing with key: " + msgText);
+                logger.info(getResources().getString(R.string.SigningWithKey) + msgText);
                 break;
             case MESSAGE_TYPE_AUTO_KEY_FAIL:
                 msgText = msg.getData().getString( MESSAGE_KEY);
@@ -140,38 +213,41 @@ public class ZipSignerActivity extends Activity {
                 setResult( AUTO_KEY_FAIL_RESULT, i);
                 finish();
                 break;
+            case MESSAGE_TYPE_BAD_PASSWORD:
+                msgText = getResources().getString(R.string.WrongKeyPassword);
+                logger.error( msgText);
+                EnterPasswordDialog.show( ZipSignerActivity.this, handler, getResources().getString(R.string.EnterKeyPassword), MESSAGE_TYPE_KEY_PASSWORD,
+                    keystorePath, 0, keyAlias);
+                break;
+            case MESSAGE_TYPE_KEY_PASSWORD:
+                keyPassword = msg.getData().getString(EnterPasswordDialog.MSG_DATA_PASSWORD);
+                logger.debug("password: " + keyPassword);
+                signerThread = new SignerThread( handler);
+                signerThread.start();
+                break;
+            case EnterPasswordDialog.MESSAGE_CODE_ENTER_PASSWORD_CANCELLED:
+                setResult( RESULT_CANCELED);
+                finish();
+                break;
+            default:
+                logger.error("Unknown message code: " + msg.what);
             }
+
+
+
         }
     };
 
     class SignerThread extends Thread implements ProgressListener, Observer
     {
-        AndroidLogger logger = (AndroidLogger)LoggerManager.getLogger(this.getClass().getName());
+        AndroidLogger logger = (AndroidLogger)LoggerManager.getLogger(SignerThread.class.getName());
         ZipSigner zipSigner = null;
         Handler mHandler;
         long lastProgressTime = 0;
 
-        String inputFile;
-        String outputFile;
-        String keyMode;
-        boolean showProgressItems;
-
-        private String getStringExtra( Intent i, String extraName, String defaultValue) {
-
-            String value = i.getStringExtra( extraName);
-            if (value == null) return defaultValue;
-            return value;
-        }
-
-        SignerThread(Handler h, Intent i)
+        SignerThread(Handler h)
         {
             mHandler = h;
-
-            showProgressItems = Boolean.valueOf( getStringExtra(i, "showProgressItems", "true"));
-            inputFile = i.getStringExtra("inputFile");
-            outputFile = i.getStringExtra("outputFile");
-            keyMode = i.getStringExtra("keyMode");
-            if (keyMode == null) keyMode = "testkey"; // backwards compatible.
         }
 
 
@@ -181,16 +257,31 @@ public class ZipSignerActivity extends Activity {
 
         public void run()
         {
+            char[] keystorePw = null;
+            char[] aliasPw = null;
             try {
                 if (inputFile == null) throw new IllegalArgumentException("Parameter inputFile is null");
                 if (outputFile == null) throw new IllegalArgumentException("Parameter outputFile is null");
 
                 zipSigner = new ZipSigner();
-                zipSigner.setKeymode(keyMode);
                 zipSigner.addAutoKeyObserver(this);
                 zipSigner.addProgressListener( this);
 
-                zipSigner.signZip( inputFile, outputFile);
+
+                if (builtInKey) {
+                    zipSigner.setKeymode(keyMode);
+                    zipSigner.signZip( inputFile, outputFile);
+                } else {
+
+                    File keystoreFile = new File( keystorePath);
+
+                    if (keystorePassword != null) {
+                        keystorePw = PasswordObfuscator.getInstance().decodeKeystorePassword( keystorePath, keystorePassword);
+                    }
+                    aliasPw = PasswordObfuscator.getInstance().decodeAliasPassword(keystorePath, keyAlias, keyPassword);
+
+                    zipSigner.signZip(keystoreFile.toURL(), "bks", keystorePw, keyAlias, aliasPw, inputFile, outputFile);
+                }
 
                 if (zipSigner.isCanceled()) 
                     sendMessage( MESSAGE_TYPE_SIGNING_CANCELED, 0, null, null);
@@ -201,6 +292,9 @@ public class ZipSignerActivity extends Activity {
             catch (AutoKeyException x) {
                 sendMessage( MESSAGE_TYPE_AUTO_KEY_FAIL, 0, MESSAGE_KEY, x.getMessage());
             }
+            catch (UnrecoverableKeyException x) {
+                sendMessage( MESSAGE_TYPE_BAD_PASSWORD, 0, MESSAGE_KEY, x.getMessage());
+            }
             catch (Throwable t) {
 
                 logger.error( t.getMessage(), t);
@@ -210,6 +304,10 @@ public class ZipSignerActivity extends Activity {
                 if (pos >= 0) tname = tname.substring(pos+1);
 
                 sendMessage( MESSAGE_TYPE_SIGNING_ERROR, 0, MESSAGE_KEY, tname + ": " + t.getMessage());
+            }
+            finally {
+                if (keystorePw != null) PasswordObfuscator.flush(keystorePw);
+                if (aliasPw != null) PasswordObfuscator.flush(aliasPw);
             }
         }
 
@@ -229,9 +327,7 @@ public class ZipSignerActivity extends Activity {
 
         /** Called to notify the listener that progress has been made during
             the zip signing operation.
-            @param currentItem the name of the item being processed.
-            @param percentDone a value between 0 and 100 indicating 
-            percent complete.
+            @param event object containing progress info
          */
         public void onProgress( ProgressEvent event)
         {
