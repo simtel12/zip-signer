@@ -18,6 +18,19 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <distributionManagement>
+        <repository>
+            <id>zs_releases</id>
+            <name>ZS Release Repo</name>
+            <url>file://${user.home}/zip-signer-release</url>
+        </repository>
+        <snapshotRepository>
+            <id>zs_snapshots</id>
+            <name>ZS Snapshot Repo</name>
+            <url>file://${user.home}/zip-signer-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>kellinwood.android</groupId>
@@ -50,6 +63,11 @@
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk16</artifactId>
+            <version>1.46</version>
         </dependency>
     </dependencies>
 

@@ -17,11 +17,15 @@ package kellinwood.zipsigner.cmdline;
 
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
+import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.cert.X509Certificate;
 
 import org.apache.commons.cli.Options;
@@ -59,6 +63,12 @@ public class Main
         System.exit(1);
     }
 
+    static char[] readPassword( String prompt)  {
+        System.out.print(prompt + ": ");
+        System.out.flush();
+        return System.console().readPassword();
+    }
+    
     public static void main( String[] args) {
         try {
 
@@ -68,6 +78,9 @@ public class Main
 
             Option providerOption = new Option("p", "provider", false, "Alternate security provider class - e.g., 'org.bouncycastle.jce.provider.BouncyCastleProvider'");
             providerOption.setArgs( 1);
+
+            Option bcprovOption = new Option("b", "bcprov", false, "Use BouncyCastle as the security provider (shorthand for -p org...BouncyCastleProvider)");
+            bcprovOption.setArgs( 0);
 
             Option modeOption = new Option("m", "keymode", false, "Keymode one of: auto, auto-testkey, auto-none, media, platform, shared, testkey, none");
             modeOption.setArgs( 1);
@@ -83,13 +96,27 @@ public class Main
 
             Option sbtOption = new Option("t", "template", false, "Signature block template file");
             sbtOption.setArgs( 1);
+            
+            Option keystoreOption = new Option("s", "keystore", false, "Keystore file");
+            keystoreOption.setArgs(1);
+            
+            Option aliasOption = new Option("a", "alias", false, "Alias for key/cert in the keystore");
+            aliasOption.setArgs(1);
+            
+            Option storepassOption = new Option("x", "storepass", false, "Keystore password");
+            storepassOption.setArgs(1);            
 
             options.addOption( helpOption);
             options.addOption( providerOption);
+            options.addOption( bcprovOption);
             options.addOption( modeOption);
             options.addOption( keyOption);
             options.addOption( certOption);
-            options.addOption( sbtOption);            
+            options.addOption( sbtOption); 
+            options.addOption( pwOption);
+            options.addOption( keystoreOption);
+            options.addOption( aliasOption);
+            options.addOption( storepassOption);
 
             Parser parser = new BasicParser();
 
@@ -133,7 +160,12 @@ public class Main
 
                 String keypw = null;
                 if (cmdLine.hasOption( pwOption.getOpt())) keypw = pwOption.getValue();
+                else {
+                    keypw = new String(readPassword("Key password"));
+                    if (keypw.equals("")) keypw = null;
+                }
                 URL privateKeyUrl = new File( keyOption.getValue()).toURI().toURL();
+                
                 privateKey = signer.readPrivateKey( privateKeyUrl, keypw);
             }
 
@@ -157,11 +189,59 @@ public class Main
 
             if (cmdLine.hasOption( keyOption.getOpt())) {
                 signer.setKeys( "custom", cert, privateKey, sigBlockTemplate);
+                signer.signZip( argList.get(0), argList.get(1));
             }
             else if (cmdLine.hasOption( modeOption.getOpt())) {
                 signer.setKeymode(modeOption.getValue());
+                signer.signZip( argList.get(0), argList.get(1));
             }
-            signer.signZip( argList.get(0), argList.get(1));
+            else if (cmdLine.hasOption(( keystoreOption.getOpt()))) {
+                String storepw = null;
+                if (cmdLine.hasOption( storepassOption.getOpt())) storepw = storepassOption.getValue();
+                else {
+                    storepw = new String(readPassword("Keystore password"));
+                    if (storepw.equals("")) storepw = null;
+                }
+                
+                String keystoreType = "jks";
+                String alias = null;
+                
+                if (!cmdLine.hasOption( aliasOption.getOpt())) {
+                    
+                    Provider provider = null;
+                    if (cmdLine.hasOption(providerOption.getOpt())) {
+                        Class providerClass = Class.forName(providerOption.getValue());
+                        provider = (Provider)providerClass.newInstance();
+                        keystoreType = "bks";
+                    }
+                    KeyStore keystore = null;
+                    if (provider != null) keystore = KeyStore.getInstance(keystoreType, provider);
+                    else keystore = KeyStore.getInstance(keystoreType);
+                    keystore.load(new FileInputStream( keystoreOption.getValue()), storepw.toCharArray());
+                    for (Enumeration<String> e = keystore.aliases(); e.hasMoreElements(); ) {
+                        alias = e.nextElement();
+                        break;
+                    }
+                }
+                else alias = aliasOption.getValue();
+
+                
+                String keypw = null;
+                if (cmdLine.hasOption( pwOption.getOpt())) keypw = pwOption.getValue();
+                else {
+                    keypw = new String(readPassword("Key password"));
+                    if (keypw.equals("")) keypw = null;
+                }
+                
+                signer.signZip( new File( keystoreOption.getValue()).toURI().toURL(),
+                        keystoreType,
+                        storepw, 
+                        alias,
+                        keypw, 
+                        argList.get(0), 
+                        argList.get(1));
+            }
+            
         }
         catch (Throwable t) {
             t.printStackTrace();
