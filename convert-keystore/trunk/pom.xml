@@ -3,7 +3,7 @@
 
     <groupId>kellinwood.keystore</groupId>
     <artifactId>convert-keystore</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>convert-keystore</name>
@@ -16,6 +16,19 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>zs_releases</id>
+            <name>ZS Release Repo</name>
+            <url>file://${user.home}/zip-signer-release</url>
+        </repository>
+        <snapshotRepository>
+            <id>zs_snapshots</id>
+            <name>ZS Snapshot Repo</name>
+            <url>file://${user.home}/zip-signer-snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
