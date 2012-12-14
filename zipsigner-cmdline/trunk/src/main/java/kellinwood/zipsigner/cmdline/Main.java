@@ -57,7 +57,12 @@ public class Main
 
         formatter.printHelp(140,
                 "ZipSignerCmdline [options] <input.zip> <output.zip>",
-                "Sign the input file and write the result to the given output file\n",
+                "Sign the input file and write the result to the given output file\n\n"+
+            "Examples:\n\n"+
+            "java -jar zipsigner-cmdline-<version>.jar input.zip output-signed.zip (signs in auto-testkey mode)\n\n"+
+            "java -jar zipsigner-cmdline-<version>.jar -m <keyMode> input.zip output-signed.zip (signs in specified mode)\n\n"+
+            "java -jar zipsigner-cmdline-<version>.jar -s <keystore file> input.zip output-signed.zip (signs with first key in the keystore)\n\n"+
+            "java -jar zipsigner-cmdline-<version>.jar -s <keystore file> -a <key alias> input.zip output-signed.zip (signs with specified key in keystore)",
                 options, "");
 
         System.exit(1);
@@ -104,7 +109,10 @@ public class Main
             aliasOption.setArgs(1);
             
             Option storepassOption = new Option("x", "storepass", false, "Keystore password");
-            storepassOption.setArgs(1);            
+            storepassOption.setArgs(1);
+
+            Option storeTypeOption = new Option("y", "storetype", false, "Keystore type (default JKS, or BKS when using BouncyCastle provider");
+            storeTypeOption.setArgs(1);
 
             options.addOption( helpOption);
             options.addOption( providerOption);
@@ -117,6 +125,7 @@ public class Main
             options.addOption( keystoreOption);
             options.addOption( aliasOption);
             options.addOption( storepassOption);
+            options.addOption( storeTypeOption);
 
             Parser parser = new BasicParser();
 
@@ -145,10 +154,17 @@ public class Main
 
             // LoggerInterface logger = LoggerManager.getLogger(Main.class.getName());
 
+            String securityProvider = null;
+            if (cmdLine.hasOption( providerOption.getOpt())) securityProvider = providerOption.getValue();
+            else if (cmdLine.hasOption( bcprovOption.getOpt()) ||
+                (cmdLine.hasOption(keystoreOption.getOpt()) && keystoreOption.getValue().toLowerCase().endsWith(".bks"))) {
+                securityProvider = "org.bouncycastle.jce.provider.BouncyCastleProvider";
+            }
+
             ZipSigner signer = new ZipSigner();
 
-            if (cmdLine.hasOption( providerOption.getOpt())) {
-                signer.loadProvider( providerOption.getValue());
+            if (securityProvider != null) {
+                signer.loadProvider( securityProvider);
             }
 
             PrivateKey privateKey = null;            
@@ -203,17 +219,23 @@ public class Main
                     if (storepw.equals("")) storepw = null;
                 }
                 
-                String keystoreType = "jks";
+                String keystoreType = null;
                 String alias = null;
-                
+
+                if (cmdLine.hasOption( storeTypeOption.getOpt())) {
+                    keystoreType = storeTypeOption.getValue();
+                }
+
                 if (!cmdLine.hasOption( aliasOption.getOpt())) {
                     
                     Provider provider = null;
-                    if (cmdLine.hasOption(providerOption.getOpt())) {
-                        Class providerClass = Class.forName(providerOption.getValue());
+                    if (securityProvider != null) {
+                        Class providerClass = Class.forName(securityProvider);
                         provider = (Provider)providerClass.newInstance();
-                        keystoreType = "bks";
+                        if (keystoreType == null && securityProvider.equals("org.bouncycastle.jce.provider.BouncyCastleProvider"))
+                            keystoreType = "bks";
                     }
+                    if (keystoreType == null) keystoreType = "jks";
                     KeyStore keystore = null;
                     if (provider != null) keystore = KeyStore.getInstance(keystoreType, provider);
                     else keystore = KeyStore.getInstance(keystoreType);
@@ -240,6 +262,10 @@ public class Main
                         keypw, 
                         argList.get(0), 
                         argList.get(1));
+            }
+            else {
+                signer.setKeymode("auto-testkey");
+                signer.signZip( argList.get(0), argList.get(1));
             }
             
         }
