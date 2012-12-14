@@ -1,12 +1,12 @@
 #! /bin/bash
 
-mvn clean package
+version=`lstags -n 1 | grep -o '[0-9.]\+[0-9]'`
 cd target
-version=`ls convert-keystore*.jar | grep -o '[0-9.]\+[0-9]'`
+rm -rf convert-keystore-$version
 mkdir convert-keystore-$version
-cp convert-keystore*.jar convert-keystore-$version
+cp ~/.m2/repository/kellinwood/keystore/convert-keystore/$version/convert-keystore-$version.jar convert-keystore-$version
+cp ~/.m2/repository/kellinwood/keystore/convert-keystore/$version/convert-keystore-$version-sources.jar convert-keystore-$version
 cp ~/.m2/repository/org/bouncycastle/bcprov-jdk16/1.46/bcprov-jdk16-1.46.jar convert-keystore-$version
-cp -r ../src convert-keystore-$version
 find convert-keystore-$version -name \*~ | xargs rm -f
 cat >convert-keystore-$version/README.txt <<EOF
 This is a utility to convert a JKS formatted keystore to BKS format.
@@ -65,3 +65,4 @@ To use a BKS keystore in ZipSigner, follow this procedure:
       sign files with them.
 EOF
 zip -r convert-keystore-$version.zip convert-keystore-$version
+mv convert-keystore-$version.zip ../.
