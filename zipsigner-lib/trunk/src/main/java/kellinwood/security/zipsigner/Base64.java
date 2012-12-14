@@ -40,10 +40,14 @@ import kellinwood.logging.LoggerManager;
 @SuppressWarnings("unchecked")
 public class Base64 {
 
-    static Method aMethod = null;  // Reference to the android.util.Base64.encode() method, if available
+    static Method aEncodeMethod = null;  // Reference to the android.util.Base64.encode() method, if available
+    static Method aDecodeMethod = null;  // Reference to the android.util.Base64.decode() method, if available
     
     static Object bEncoder = null; // Reference to an org.bouncycastle.util.encoders.Base64Encoder instance, if available
-    static Method bMethod = null;  // Reference to the bEncoder.encode() method, if available
+    static Method bEncodeMethod = null;  // Reference to the bEncoder.encode() method, if available
+    
+    static Object bDecoder = null; // Reference to an org.bouncycastle.util.encoders.Base64Encoder instance, if available
+    static Method bDecodeMethod = null;  // Reference to the bEncoder.encode() method, if available    
     
     static LoggerInterface logger = null;
     
@@ -56,7 +60,8 @@ public class Base64 {
         try {
             clazz = (Class<Object>) Class.forName("android.util.Base64");
             // Looking for encode( byte[] input, int flags)
-            aMethod = clazz.getMethod("encode", byte[].class, Integer.TYPE);
+            aEncodeMethod = clazz.getMethod("encode", byte[].class, Integer.TYPE);
+            aDecodeMethod = clazz.getMethod("decode", byte[].class, Integer.TYPE);
             logger.info( clazz.getName() + " is available.");
         }
         catch (ClassNotFoundException x) {} // Ignore
@@ -68,30 +73,54 @@ public class Base64 {
             clazz = (Class<Object>) Class.forName("org.bouncycastle.util.encoders.Base64Encoder");
             bEncoder = clazz.newInstance();
             // Looking for encode( byte[] input, int offset, int length, OutputStream output)
-            bMethod = clazz.getMethod("encode", byte[].class, Integer.TYPE, Integer.TYPE, OutputStream.class);
+            bEncodeMethod = clazz.getMethod("encode", byte[].class, Integer.TYPE, Integer.TYPE, OutputStream.class);
             logger.info( clazz.getName() + " is available.");
+            // Looking for decode( byte[] input, int offset, int length, OutputStream output)
+            bDecodeMethod = clazz.getMethod("decode", byte[].class, Integer.TYPE, Integer.TYPE, OutputStream.class);
+
         }
         catch (ClassNotFoundException x) {} // Ignore
         catch (Exception x) {
             logger.error("Failed to initialize use of org.bouncycastle.util.encoders.Base64Encoder", x);
         }
         
-        if (aMethod == null && bMethod == null)
+        if (aEncodeMethod == null && bEncodeMethod == null)
             throw new IllegalStateException("No base64 encoder implementation is available.");
     }
     
 
     public static String encode( byte[] data) {
         try {
-            if (aMethod != null) {
+            if (aEncodeMethod != null) {
                 // Invoking a static method call, using null for the instance value
-                byte[] encodedBytes = (byte[])aMethod.invoke(null, data, 2);
+                byte[] encodedBytes = (byte[])aEncodeMethod.invoke(null, data, 2);
                 return new String( encodedBytes);
             }
-            else if (bMethod != null) {
+            else if (bEncodeMethod != null) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                bMethod.invoke(bEncoder, data, 0, data.length, baos);
+                bEncodeMethod.invoke(bEncoder, data, 0, data.length, baos);
                 return new String( baos.toByteArray());
+            }
+        }
+        catch (Exception x) {
+            throw new IllegalStateException( x.getClass().getName() + ": " + x.getMessage());
+        }
+
+        
+        throw new IllegalStateException("No base64 encoder implementation is available.");
+    }
+    
+    public static byte[] decode( byte[] data) {
+        try {
+            if (aDecodeMethod != null) {
+                // Invoking a static method call, using null for the instance value
+                byte[] decodedBytes = (byte[])aDecodeMethod.invoke(null, data, 2);
+                return decodedBytes;
+            }
+            else if (bDecodeMethod != null) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                bDecodeMethod.invoke(bEncoder, data, 0, data.length, baos);
+                return baos.toByteArray();
             }
         }
         catch (Exception x) {

@@ -546,11 +546,24 @@ public class ZipSigner
         }
     }
 
+    public void signZip( URL keystoreURL,
+                         String keystoreType,
+                         String keystorePw,
+                         String certAlias,
+                         String certPw,
+                         String inputZipFilename,
+                         String outputZipFilename)
+        throws ClassNotFoundException, IllegalAccessException, InstantiationException,
+        IOException, GeneralSecurityException
+    {
+        signZip( keystoreURL, keystoreType, keystorePw.toCharArray(), certAlias, certPw.toCharArray(), inputZipFilename, outputZipFilename);
+    }
+
     public void signZip( URL keystoreURL, 
             String keystoreType,
-            String keystorePw, 
+            char[] keystorePw,
             String certAlias,
-            String certPw, 
+            char[] certPw,
             String inputZipFilename, 
             String outputZipFilename)
     throws ClassNotFoundException, IllegalAccessException, InstantiationException,
@@ -565,10 +578,10 @@ public class ZipSigner
             keystore = KeyStore.getInstance(keystoreType);
 
             keystoreStream = keystoreURL.openStream();
-            keystore.load(keystoreStream, keystorePw.toCharArray());
+            keystore.load(keystoreStream, keystorePw);
             Certificate cert = keystore.getCertificate(certAlias);
             X509Certificate publicKey = (X509Certificate)cert;
-            Key key = keystore.getKey(certAlias, certPw.toCharArray());
+            Key key = keystore.getKey(certAlias, certPw);
             PrivateKey privateKey = (PrivateKey)key;
             
             setKeys( "custom", publicKey, privateKey, null);
