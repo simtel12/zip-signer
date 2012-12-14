@@ -3,14 +3,14 @@
 
     <groupId>kellinwood.keystore</groupId>
     <artifactId>convert-keystore</artifactId>
-    <version>1.0</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>convert-keystore</name>
     <url>http://code.google.com/p/zip-signer</url>
 
     <scm>
-        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/convert-keystore/tags/convert-keystore-1.0</developerConnection>
+        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/convert-keystore/trunk</developerConnection>
     </scm>
 
     <properties>
