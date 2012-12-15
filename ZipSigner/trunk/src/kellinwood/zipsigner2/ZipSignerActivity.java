@@ -123,8 +123,10 @@ public class ZipSignerActivity extends Activity {
         builtInKey = false;
         keyMode = intent.getStringExtra("keyMode");
         for (String builtInKeyName : ZipSigner.SUPPORTED_KEY_MODES){
-            if (keyMode.equals( builtInKeyName)) builtInKey = true;
-            break;
+            if (keyMode.equals( builtInKeyName)) {
+                builtInKey = true;
+                break;
+            }
         }
 
         Alias selectedAlias = null;
