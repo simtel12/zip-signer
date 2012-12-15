@@ -117,11 +117,11 @@ public class ZipSignerActivity extends Activity {
         showProgressItems = Boolean.valueOf( getStringExtra(intent, "showProgressItems", "true"));
         inputFile = intent.getStringExtra("inputFile");
         outputFile = intent.getStringExtra("outputFile");
-        keyMode = intent.getStringExtra("keyMode");
-        if (keyMode == null) keyMode = "testkey"; // backwards compatible.
 
         builtInKey = false;
         keyMode = intent.getStringExtra("keyMode");
+        if (keyMode == null) keyMode = "testkey"; // backwards compatible.
+
         for (String builtInKeyName : ZipSigner.SUPPORTED_KEY_MODES){
             if (keyMode.equals( builtInKeyName)) {
                 builtInKey = true;
