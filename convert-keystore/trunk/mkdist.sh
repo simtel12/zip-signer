@@ -15,6 +15,16 @@ keystore is, then chances are that its a JKS keystore. The BKS format
 is supported on Android, JKS is not, hence the need to convert
 formats.
 
+In order to convert the keystore as shown below you must have the Java
+Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy
+Files installed in your JRE.  Google "java unlimited strength policy
+files" and download the jce_policy zip file.  Unpack the zip and copy
+local_policy.jar and US_export_policy.jar to your jre/lib/security
+directory.  If you don't install these files and try to convert the
+keystore, you will get this error "java.security.KeyStoreException:
+java.io.IOException: Error initialising store of key store:
+java.security.InvalidKeyException: Illegal key size."
+
 Run this command:
 
 java -jar convert-keystore-$version.jar <input JKS file> <output BKS file>
