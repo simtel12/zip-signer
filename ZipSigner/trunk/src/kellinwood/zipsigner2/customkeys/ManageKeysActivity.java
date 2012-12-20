@@ -21,6 +21,7 @@ import java.security.UnrecoverableKeyException;
 import java.util.Enumeration;
 import java.util.List;
 
+import android.app.ProgressDialog;
 import kellinwood.zipsigner2.R;
 import kellinwood.zipsigner2.ZipPickerActivity;
 
@@ -72,11 +73,13 @@ public class ManageKeysActivity extends Activity {
 
     AndroidLogger logger = null;
 
+    ExpandableListView keystoreListView = null;
     KeystoreExpandableListAdapter keystoreExpandableListAdapter = null;
 
     String extStorageDir = "/";
 
     CustomKeysDataSource customKeysDataSource = null;
+    ProgressDialog keystoreLoadingDialog = null;
     
     
     
@@ -109,12 +112,16 @@ public class ManageKeysActivity extends Activity {
         customKeysDataSource = new CustomKeysDataSource(getBaseContext());
         customKeysDataSource.open();
         
-        ExpandableListView keystoreListView = (ExpandableListView)findViewById(R.id.KeystoreExpandableListView);
+        keystoreListView = (ExpandableListView)findViewById(R.id.KeystoreExpandableListView);
         keystoreExpandableListAdapter = new KeystoreExpandableListAdapter(this, customKeysDataSource.getAllKeystores());
         keystoreListView.setAdapter( keystoreExpandableListAdapter);
         keystoreListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        
-        keystoreListView.setOnCreateContextMenuListener( new OnCreateContextMenuListener() 
+
+        for(int i=0; i < keystoreExpandableListAdapter.getGroupCount(); i++) {
+            keystoreListView.expandGroup(i);
+        }
+
+        keystoreListView.setOnCreateContextMenuListener( new OnCreateContextMenuListener()
         {
             public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
 
@@ -179,11 +186,11 @@ public class ManageKeysActivity extends Activity {
             doExpListContextMenuOp( item, MENU_ITEM_KEYSTORE_FORGET_PASSWORD);
             break;
         case MENU_ITEM_ALIAS_REMEMBER_PASSWORD:
-                doExpListContextMenuOp( item, MENU_ITEM_ALIAS_REMEMBER_PASSWORD);
-                break;
+            doExpListContextMenuOp( item, MENU_ITEM_ALIAS_REMEMBER_PASSWORD);
+            break;
         case MENU_ITEM_ALIAS_FORGET_PASSWORD:
             doExpListContextMenuOp( item, MENU_ITEM_ALIAS_FORGET_PASSWORD);
-                break;
+            break;
         case MENU_ITEM_ALIAS_DISPLAY_NAME:
             doExpListContextMenuOp( item, MENU_ITEM_ALIAS_DISPLAY_NAME);
             break;
@@ -294,7 +301,7 @@ public class ManageKeysActivity extends Activity {
         // This will keep the starting directory of the file browser somewhat consistent.
         String samplePath = extStorageDir + "/dummy.txt";
         if (debug) logger.debug( String.format("Using sample path: %s", samplePath));
-        ZipPickerActivity.launchFileBrowser(this, "select keystore file", REQUEST_CODE_PICK_KEYSTORE_FILE, samplePath);
+        ZipPickerActivity.launchFileBrowser(this, getResources().getString(R.string.BrowserSelectKeystore), REQUEST_CODE_PICK_KEYSTORE_FILE, samplePath);
     }
 
     
@@ -310,10 +317,13 @@ public class ManageKeysActivity extends Activity {
                 String encodedPassword = msg.getData().getString(EnterPasswordDialog.MSG_DATA_PASSWORD);
                 String keystorePath = msg.getData().getString(EnterPasswordDialog.MSG_DATA_PATH);
                 boolean rememberPassword = msg.getData().getBoolean( EnterPasswordDialog.MSG_DATA_REMEMBER_PASSWORD);
-                
+                keystoreLoadingDialog = new ProgressDialog(ManageKeysActivity.this);
+                keystoreLoadingDialog.setMessage(getResources().getString(R.string.KeystoreLoadingMessage));
+                keystoreLoadingDialog.show();
                 new KeystoreLoader( keystorePath, encodedPassword, rememberPassword).start();
                 break;
             case ManageKeysActivity.MESSAGE_CODE_BAD_KEYSTORE_PASSWORD:
+                if (keystoreLoadingDialog != null) keystoreLoadingDialog.dismiss(); keystoreLoadingDialog = null;
                 encodedPassword = msg.getData().getString(EnterPasswordDialog.MSG_DATA_PASSWORD);
                 keystorePath = msg.getData().getString(EnterPasswordDialog.MSG_DATA_PATH);
                 rememberPassword = msg.getData().getBoolean(EnterPasswordDialog.MSG_DATA_REMEMBER_PASSWORD);
@@ -323,10 +333,13 @@ public class ManageKeysActivity extends Activity {
                     MESSAGE_CODE_LOAD_KEYSTORE_PASSWORD, keystorePath, 0, rememberPassword, null);
                 break;
             case ManageKeysActivity.MESSAGE_CODE_KEYSTORE_LOADED:
+                if (keystoreLoadingDialog != null) keystoreLoadingDialog.dismiss(); keystoreLoadingDialog = null;
                 logger.debug("Keystore loaded.");
                 keystoreExpandableListAdapter.dataChanged(customKeysDataSource.getAllKeystores());
+                keystoreListView.expandGroup(keystoreExpandableListAdapter.getGroupCount()-1);
                 break;
             case ManageKeysActivity.MESSAGE_CODE_KEYSTORE_LOAD_ERROR:
+                if (keystoreLoadingDialog != null) keystoreLoadingDialog.dismiss(); keystoreLoadingDialog = null;
                 logger.error( msg.getData().getString( EnterPasswordDialog.MSG_DATA_MESSAGE));
                 break;
             case ManageKeysActivity.MESSAGE_CODE_KEYSTORE_REMEMBER_PASSWORD:

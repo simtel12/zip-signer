@@ -17,6 +17,7 @@
         	android:id="@+id/AddKeystoreButton" 
         	android:layout_width="wrap_content" 
         	android:layout_height="wrap_content"
+            android:textSize="16sp"
         	/>
 
 	</LinearLayout>
@@ -26,5 +27,7 @@
 		android:id="@+id/KeystoreExpandableListView" 
 		android:layout_width="wrap_content" 
 		android:layout_height="wrap_content"
+        android:paddingTop="10sp"
+        android:textSize="16sp"
 		/>
 </LinearLayout>

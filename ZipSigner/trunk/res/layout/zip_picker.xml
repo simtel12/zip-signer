@@ -25,27 +25,29 @@
     >
 <Button android:text="@string/InOutPickButtonLabel" 
         android:id="@+id/InOutPickButton" 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"></Button>        
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
 
 <Button android:text="@string/OpenPickButtonLabel" 
         android:id="@+id/OpenPickButton" 
-        android:layout_width="wrap_content" 
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        />
+        android:textSize="16sp"/>
 
-<Button android:text="@string/SaveAsPickButtonLabel" 
+<Button android:text="@string/SaveAsPickButtonLabel"
         android:id="@+id/SaveAsPickButton" 
-        android:layout_width="wrap_content" 
-        android:layout_height="wrap_content"></Button>
-        
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
+
 </LinearLayout>        
         
 <TextView android:text="@string/InputZipLabel" 
           android:id="@+id/InputZipTextView" 
           android:layout_width="wrap_content" 
           android:layout_height="wrap_content"
-          android:textSize="14sp"
+          android:textSize="16sp"
           android:textStyle="bold"
           android:layout_marginTop="10px"              
           ></TextView>
@@ -61,7 +63,7 @@
               android:id="@+id/SignedZipTextView" 
               android:layout_width="wrap_content" 
               android:layout_height="wrap_content"
-              android:textSize="14sp"
+              android:textSize="16sp"
               android:textStyle="bold"
               android:layout_marginTop="10px"              
               ></TextView>
@@ -81,12 +83,15 @@
           android:layout_height="wrap_content"
           android:layout_marginTop="10px"
           android:layout_marginLeft="5px"
+          android:textStyle="bold"
+          android:textSize="16sp"
           ></TextView>
 <Spinner 
     android:id="@+id/KeyModeSpinner"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:prompt="@string/KeyModeLabel"
+    android:textSize="32sp"
 />
 
 
@@ -95,7 +100,8 @@
         android:id="@+id/SignButton" 
         android:layout_width="wrap_content" 
         android:layout_height="wrap_content"
-        android:layout_marginTop="20px"/>
+        android:layout_marginTop="20px"
+        android:textSize="16sp"/>
         
 </LinearLayout>
 </ScrollView>

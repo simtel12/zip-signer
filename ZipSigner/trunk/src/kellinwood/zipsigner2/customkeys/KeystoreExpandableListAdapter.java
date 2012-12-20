@@ -2,6 +2,7 @@ package kellinwood.zipsigner2.customkeys;
 
 import java.util.List;
 
+import android.view.LayoutInflater;
 import kellinwood.zipsigner2.R;
 
 
@@ -49,19 +50,16 @@ public class KeystoreExpandableListAdapter  extends BaseExpandableListAdapter
     {
         
         final Alias childAlias = getChild(groupPosition, childPosition);
-        
-        // Layout parameters for the ExpandableListView
-        AbsListView.LayoutParams lp = new AbsListView.LayoutParams(
-                ViewGroup.LayoutParams.FILL_PARENT, 64);
 
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
-        linearLayout.setLayoutParams(lp);
-        
-        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        cblp.setMargins(0, 10, 0, 0);
-        
-        CheckBox checkBox = new CheckBox(context);
+        LinearLayout linearLayout = null;
+        if (convertView == null) {
+            LayoutInflater inflater = LayoutInflater.from(context);
+            linearLayout = (LinearLayout)inflater.inflate(R.layout.alias_item, null);
+
+        } else linearLayout = (LinearLayout)convertView;
+
+
+        CheckBox checkBox = (CheckBox)linearLayout.findViewById(R.id.AliasItemCheckBox);
         checkBox.setChecked( childAlias.isSelected());
         checkBox.setOnClickListener( new OnClickListener() {
             @Override
@@ -72,14 +70,9 @@ public class KeystoreExpandableListAdapter  extends BaseExpandableListAdapter
             }
         });
         
-        checkBox.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-        checkBox.setLayoutParams(cblp);
-        linearLayout.addView(checkBox);
-        
-        TextView textView = new TextView(context);
-        textView.setGravity(Gravity.TOP | Gravity.LEFT);
-        textView.setPadding(10, 0, 0, 0);
-        
+
+        TextView textView = (TextView)linearLayout.findViewById(R.id.AliasItemTextView);
+
         String text = childAlias.getDisplayName();
         if (!childAlias.getName().equals(childAlias.getDisplayName())) {
             text = text + " (" + childAlias.getName() + ")";
@@ -89,8 +82,7 @@ public class KeystoreExpandableListAdapter  extends BaseExpandableListAdapter
                     context.getResources().getString(R.string.PasswordIsNotRemembered));        
         textView.setText( text);
 
-        linearLayout.setLongClickable(true); // enables access to the context menu
-        linearLayout.addView(textView);
+
         return linearLayout;
     }
 
@@ -111,17 +103,24 @@ public class KeystoreExpandableListAdapter  extends BaseExpandableListAdapter
     {
         
         final Keystore keystore = getGroup( groupPosition);
-        
-        // Layout parameters for the ExpandableListView
-        AbsListView.LayoutParams lp = new AbsListView.LayoutParams(
-                ViewGroup.LayoutParams.FILL_PARENT, 64);
 
-        TextView textView = new TextView(context);
-        textView.setLayoutParams(lp);
-        // Center the text vertically
-        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-        // Set the text starting position
-        textView.setPadding(36, 0, 0, 0);
+        TextView textView = null;
+        if (convertView == null) {
+            LayoutInflater inflater = LayoutInflater.from(context);
+            textView = (TextView)inflater.inflate(R.layout.keystore_group, null);
+
+        } else textView = (TextView)convertView;
+
+//        // Layout parameters for the ExpandableListView
+//        AbsListView.LayoutParams lp = new AbsListView.LayoutParams(
+//                ViewGroup.LayoutParams.FILL_PARENT, 64);
+//
+//        TextView textView = new TextView(context);
+//        textView.setLayoutParams(lp);
+//        // Center the text vertically
+//        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
+//        // Set the text starting position
+//        textView.setPadding(36, 0, 0, 0);
         textView.setText(keystore.getPath()
                 + "\n" + (keystore.rememberPassword() ? 
                         context.getResources().getString(R.string.PasswordIsRemembered) : 

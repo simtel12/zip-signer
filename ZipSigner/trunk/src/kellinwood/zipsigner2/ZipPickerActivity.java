@@ -17,7 +17,7 @@ package kellinwood.zipsigner2;
 
 import java.io.File;
 
-import android.os.Handler;
+import android.content.DialogInterface;
 import android.widget.*;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
@@ -31,7 +31,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Message;
 import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -120,8 +119,8 @@ public class ZipPickerActivity extends Activity {
         });        
         
         Spinner spinner = (Spinner) findViewById(R.id.KeyModeSpinner);
-        keyModeSpinnerAdapter = KeyListSpinnerAdapter.createInstance(this, android.R.layout.simple_spinner_item);
-        keyModeSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        keyModeSpinnerAdapter = KeyListSpinnerAdapter.createInstance(this, R.layout.spinner_target);
+        // keyModeSpinnerAdapter.setDropDownViewResource(R.layout.spinner_row);
         spinner.setAdapter(keyModeSpinnerAdapter);
         if (keyIndex >= keyModeSpinnerAdapter.getCount()) keyIndex = 0;
         spinner.setSelection(keyIndex);
@@ -233,21 +232,17 @@ public class ZipPickerActivity extends Activity {
     }
 
     protected void alertDialog( String title, String message) {
-        final AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-        // TODO: move text into resources                    
-        alertDialog.setTitle( title);
-        alertDialog.setMessage( message);
-        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK", (Message)null);
-        alertDialog.show();
-        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        button.setOnClickListener( new OnClickListener() {
-            @Override
-            public void onClick(View arg0) {
-                alertDialog.dismiss();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(message).setTitle(title);
+        builder.setPositiveButton(R.string.OkButtonLabel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
             }
-            
-        });        
+        });
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
+
     /**
      * Receives the result of other activities started with startActivityForResult(...)
      */
@@ -336,7 +331,8 @@ public class ZipPickerActivity extends Activity {
             switch (requestCode) {
             case REQUEST_CODE_SIGN_FILE:
                 // TODO display alert dialog?
-                String errorMessage = data.getStringExtra("errorMessage");
+                // String errorMessage = data.getStringExtra("errorMessage");
+                String errorMessage = String.format( getResources().getString(R.string.KeySelectionMessage), getInputFilename());
                 alertDialog(getResources().getString(R.string.KeySelectionError), errorMessage);
                 break;
             default:

@@ -12,6 +12,7 @@
     <string name="BrowserSelectInput">select input</string>
     <string name="BrowserSelectOutput">select output</string>
     <string name="KeySelectionError">Key Selection Error</string>
+    <string name="KeySelectionMessage">Unable to auto-select key for signing %s</string>
     <string name="FileSigningSuccess">File signing operation succeeded!</string>
     <string name="FileSigningCancelled">File signing CANCELED!</string>
     <string name="ExtStorageIsReadOnly">ERROR: External storage is mounted read-only</string>
@@ -60,6 +61,8 @@
     <string name="WrongKeyPassword">Wrong Key Password</string>
     <string name="PasswordIsRemembered">(password remembered)</string>
     <string name="PasswordIsNotRemembered">(password not remembered)</string>
+    <string name="BrowserSelectKeystore">select keystore file</string>
+    <string name="KeystoreLoadingMessage">Loading keystore file...</string>
 
 
 </resources>

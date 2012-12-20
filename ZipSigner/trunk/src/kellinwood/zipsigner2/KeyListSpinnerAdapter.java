@@ -2,6 +2,9 @@ package kellinwood.zipsigner2;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.text.Layout;
+import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -83,26 +86,22 @@ public class KeyListSpinnerAdapter extends ArrayAdapter<KeyEntry> {
     // This is for the "passive" state of the spinner
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        // I created a dynamic TextView here, but you can reference your own  custom layout for each spinner item
-        TextView label = new TextView(context);
-        label.setTextColor(Color.BLACK);
-        // Then you can get the current item using the values array (Users array) and the current position
-        // You can NOW reference each method you has created in your bean object (User class)
-        label.setText(values.get(position).getDisplayName());
-
-        // And finally return your dynamic (or custom) view for each spinner item
-        return label;
+        View view = super.getView(position, convertView, parent);
+        if (view instanceof TextView) {
+            TextView label = (TextView)view;
+            label.setText(values.get(position).getDisplayName());
+        }
+        return view;
     }
 
     // And here is when the "chooser" is popped up
     // Normally is the same view, but you can customize it if you want
     @Override
-    public View getDropDownView(int position, View convertView,
-                                ViewGroup parent) {
-        TextView label = new TextView(context);
-        label.setTextColor(Color.BLACK);
-        label.setText(values.get(position).getDisplayName());
+    public View getDropDownView(int position, View convertView, ViewGroup parent) {
 
-        return label;
+        LayoutInflater inflater = LayoutInflater.from(context);
+        TextView view = (TextView)inflater.inflate(R.layout.spinner_row, null);
+        view.setText(values.get(position).getDisplayName());
+        return view;
     }
 }
