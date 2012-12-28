@@ -80,12 +80,8 @@
 
                 <configuration>
                     <executable>java</executable>
+                    <mainClass>kellinwood.keystore.Convert</mainClass>
                     <arguments>
-                        <argument>-classpath</argument>
-                        <!-- automatically creates the classpath using all project dependencies,
-                             also adding the project build directory -->
-                        <classpath />
-                        <argument>kellinwood.keystore.Convert</argument>
                         <argument>${inputFile}</argument>
                         <argument>${outputFile}</argument>
                     </arguments>

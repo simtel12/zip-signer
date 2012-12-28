@@ -25,54 +25,72 @@ public class Convert {
         Security.insertProviderAt(provider, 1);
         return provider;
     }
+
+    public static void usage() {
+        System.out.println("USAGE: Convert [-r] <keystore.jks> <keystore.bks");
+        System.out.println("Converts JKS formatted keystore to BKS format.");
+        System.out.println("The -r option reverses the operation to convert BKS format to JKS");
+        System.exit(1);
+    }
     
     public static void main(String[] args) {
-        
+
+        boolean reverse = false;
+
+        String inFile = null;
+        String outFile = null;
         try {
 
             // System.out.println( "Default keystore type is " + KeyStore.getDefaultType());
-            
-            if (args.length != 2) {
-                System.out.println("USAGE: Convert <keystore.jks> <keystore.bks");
-                System.out.println("Converts JKS formatted keystore to BKS format.");
-                System.exit(1);
+            if (args.length == 3) {
+                if ("-r".equalsIgnoreCase(args[0])) {
+                    reverse = true;
+                    inFile = args[1];
+                    outFile = args[2];
+                } else {
+                    System.out.print("ERROR - unrecognized option: "+args[0]);
+                }
+            } else if (args.length != 2) {
+                usage();
+            } else {
+                inFile = args[0];
+                outFile = args[1];
             }
-            
-            FileInputStream fis = new FileInputStream( args[0]);
-            KeyStore jksKeystore = KeyStore.getInstance("jks");
-            
-            char[] keystorePassword = readPassword("Keystore password");
-            jksKeystore.load(fis, keystorePassword);
-            fis.close();
 
             Provider bcProvider = loadProvider("org.bouncycastle.jce.provider.BouncyCastleProvider");
-            KeyStore bksKeystore = KeyStore.getInstance("bks", bcProvider);
-            bksKeystore.load(null, keystorePassword);
+
+            FileInputStream fis = new FileInputStream( inFile);
+            KeyStore fromKeystore = !reverse ? KeyStore.getInstance("jks") : KeyStore.getInstance("bks", bcProvider);
             
-            for( Enumeration<String> e = jksKeystore.aliases(); e.hasMoreElements(); ) {
+            char[] keystorePassword = readPassword("Keystore password");
+            fromKeystore.load(fis, keystorePassword);
+            fis.close();
+
+
+            KeyStore toKeystore = reverse ? KeyStore.getInstance("jks") : KeyStore.getInstance("bks", bcProvider);
+            toKeystore.load(null, keystorePassword);
+            
+            for( Enumeration<String> e = fromKeystore.aliases(); e.hasMoreElements(); ) {
                 String alias = e.nextElement();
                 
                 System.out.println("Alias: " + alias);
                 char[] keyPassword = null;
                 Key key;
                 try {
-                    key = jksKeystore.getKey(alias, keystorePassword);
+                    key = fromKeystore.getKey(alias, keystorePassword);
                     keyPassword = keystorePassword;
                 } catch ( java.security.UnrecoverableKeyException x) {
                     keyPassword = readPassword("Password for entry " + alias);
-                    key = jksKeystore.getKey(alias, keyPassword);
+                    key = fromKeystore.getKey(alias, keyPassword);
                 }
-                
-                System.out.println("Key type:   " + key.getClass().getName());
-                System.out.println("Key format: " + key.getFormat());
-                
-                Certificate cert = jksKeystore.getCertificate(alias);
 
-                bksKeystore.setKeyEntry(alias, key, keyPassword, new Certificate[] { cert });
+                Certificate cert = fromKeystore.getCertificate(alias);
+
+                toKeystore.setKeyEntry(alias, key, keyPassword, new Certificate[]{cert});
             }
             
-            FileOutputStream fos = new FileOutputStream( args[1]);
-            bksKeystore.store(fos, keystorePassword);
+            FileOutputStream fos = new FileOutputStream( outFile);
+            toKeystore.store(fos, keystorePassword);
             fos.close();
 
         } catch (Exception x) {
