@@ -84,7 +84,7 @@ public class AndroidLogger extends AbstractLogger
 	public void errorLO(String message, Throwable t) {
         boolean toastState = isErrorToastEnabled;
         isErrorToastEnabled = false;
-		write( ERROR, message, t);
+		writeFixNullMessage( ERROR, message, t);
         isErrorToastEnabled = toastState;
 	}
 
@@ -92,7 +92,7 @@ public class AndroidLogger extends AbstractLogger
 	public void warningLO(String message, Throwable t) {
         boolean toastState = isWarningToastEnabled;
         isWarningToastEnabled = false;
-		write( WARNING, message, t);
+        writeFixNullMessage( WARNING, message, t);
         isWarningToastEnabled = toastState;
 	}
     
@@ -100,7 +100,7 @@ public class AndroidLogger extends AbstractLogger
 	public void infoLO(String message, Throwable t) {
         boolean toastState = isInfoToastEnabled;
         isInfoToastEnabled = false;
-		write( INFO, message, t);
+        writeFixNullMessage( INFO, message, t);
         isInfoToastEnabled = toastState;
 	}
     
@@ -108,7 +108,7 @@ public class AndroidLogger extends AbstractLogger
 	public void debugLO(String message, Throwable t) {
         boolean toastState = isDebugToastEnabled;
         isDebugToastEnabled = false;
-		write( DEBUG, message, t);
+        writeFixNullMessage( DEBUG, message, t);
         isDebugToastEnabled = toastState;
 	}
 
