@@ -35,37 +35,45 @@ public abstract class AbstractLogger implements LoggerInterface
 	}
 	
 	protected abstract void write( String level, String message, Throwable t);
-	
+
+    protected void writeFixNullMessage( String level, String message, Throwable t) {
+        if (message == null) {
+            if (t != null) message = t.getClass().getName();
+            else message = "null";
+        }
+        write( level, message, t);
+    }
+
 	public void debug(String message, Throwable t) {
-		write( DEBUG, message, t);
+        writeFixNullMessage( DEBUG, message, t);
 	}
 
 	public void debug(String message) {
-		write( DEBUG, message, null);
+        writeFixNullMessage( DEBUG, message, null);
 	}
 
 	public void error(String message, Throwable t) {
-		write( ERROR, message, t);
+        writeFixNullMessage( ERROR, message, t);
 	}
 
 	public void error(String message) {
-		write( ERROR, message, null);
+        writeFixNullMessage( ERROR, message, null);
 	}
 
 	public void info(String message, Throwable t) {
-		write( INFO, message, t);
+        writeFixNullMessage( INFO, message, t);
 	}
 
 	public void info(String message) {
-		write( INFO, message, null);
+        writeFixNullMessage( INFO, message, null);
 	}
 
 	public void warning(String message, Throwable t) {
-		write( WARNING, message, t);
+        writeFixNullMessage( WARNING, message, t);
 	}
 
 	public void warning(String message) {
-		write( WARNING, message, null);
+        writeFixNullMessage( WARNING, message, null);
 	}
 
 	public boolean isDebugEnabled() {
