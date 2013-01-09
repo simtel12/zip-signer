@@ -36,13 +36,13 @@ This project currently depends on other libraries:
   include this library and activate it via a few API calls (see below).
   The source to this library is licensed under Apache 2.0.
 
-- OPTIONAL: android-sun-jarsign-support, which contains the Sun code
-  required to create a properly formated PKCS#7 signature block file.
-  This dependency is only needed if you are not using the default
-  certificate and have not supplied a signature block template file
-  (see below for more information on this subject). The code in this
-  library was obtained from the OpenJDK project and is licensed under
-  GPL version 2.
+- OPTIONAL: zipsigner-lib-optional, which contains the code
+  required to create a properly formatted CMS/PKCS#7 signature block file.
+  This JAR is typically required in order to sign with private keys or
+  create self-signed certificates for publishing apps.  If you include this
+  file in your project, then you will also need to include the SpongyCastle
+  JARS (sc-light, scprov, and scpix from http://rtyley.github.com/spongycastle/).
+  SpongyCastle is an Android-friendly version of BouncyCastle.
 
 - For use in normal desktop JRE applications, you must install Bouncy 
   Castle Crypto API.  http://www.bouncycastle.org/java.html.  The BC 
@@ -153,8 +153,12 @@ SIGNING WITH OTHER CERTIFICATES
     public byte[] readContentAsBytes( URL contentUrl);
 
     // Sign the zip using the given public/private key pair. Signature block template may be null if 
-    // you've included android-sun-jarsign-support.jar in the build.
+    // you've included zipsigner-lib-optional.jar in the build.
     public void setKeys( X509Certificate publicKey, PrivateKey privateKey, byte[] signatureBlockTemplate);
+
+    signZip( inputFile, outputFile);
+
+OR
 
     // Sign the zip using a cert/key pair from the given keystore.  Keystore type on Android is "BKS".
     // See below for information on creating an Android compatible keystore.
@@ -181,7 +185,7 @@ Here are some brief instructions:
 
 keytool -genkey \
         -alias CERT \
-        -keystore assets/keystore.ks \
+        -keystore keystore.bks \
         -storetype BKS \
         -provider org.bouncycastle.jce.provider.BouncyCastleProvider \
         -storepass android \
@@ -194,7 +198,7 @@ keytool -genkey \
 * Create the cert...
 
 keytool -selfcert -validity 9125 -alias CERT \
-    -keystore assets/keystore.ks \
+    -keystore keystore.bks \
     -storepass android -keypass android \
     -storetype BKS \
     -provider org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -202,7 +206,7 @@ keytool -selfcert -validity 9125 -alias CERT \
 
 * List the contents of the keystore:
 
-keytool -list -v -keystore assets/keystore.ks \
+keytool -list -v -keystore keystore.bks \
     -storepass android -keypass android -storetype BKS \
     -provider org.bouncycastle.jce.provider.BouncyCastleProvider
 
@@ -213,19 +217,20 @@ keytool -list -v -keystore assets/keystore.ks \
 
 SIGNATURE BLOCK TEMPLATE
 
-The signature block file, CERT.RSA, contains PCKS#7 formatted data.
-In the initial version of zipsigner-lib, the code in
-sun.security.x509, sun.security.pcks, etc, was used to write this data
-structure.  The only inputs are the x509 public key certificate and
-the signature bytes.  Luckily for us, the signature bytes are at the
-very end of the PCKS#7 block, making it easy to create a PCKS#7
-template based on the certificate and just append the signature bytes.
-This technique eliminates the dependency on a large part of the Sun
-code, but it means that a signature block template must be created for
-the certificate.
+Signature block templates can be used to eliminate the dependency on
+zipsigner-lib-optional.  The only drawback is that they must be
+created ahead of time for the keys you intend to sign with.
 
-Note that zipsigner-lib contains and loads a signature block template
-when using the default key and certificate.
+Note that zipsigner-lib contains uses signature block templates when
+signing with the built-in keys and certificates.
+
+The signature block file, CERT.RSA, contains CMS/PCKS#7 formatted
+data.  Luckily for us, the signature bytes are at the very end of the
+CMS block, making it possible to create a template based on the
+certificate and just append the signature bytes.  This technique
+eliminates the dependency zipsigner-lib-optional, but it means that a
+signature block template must be created for the certificate.
+
 
 Step 1, sign a file using the certificate for which the template is
 needed.  Use the desktop command line version of zipsigner and give it
