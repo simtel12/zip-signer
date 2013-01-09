@@ -3,14 +3,14 @@
 
     <groupId>kellinwood.android</groupId>
     <artifactId>kellinwood-logging-android</artifactId>
-    <version>1.4</version>
+    <version>1.5-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>kellinwood-logging-android</name>
     <url>http://code.google.com/p/zip-signer/</url>
 
     <scm>
-        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/kellinwood-logging-android/tags/kellinwood-logging-android-1.4</developerConnection>
+        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/kellinwood-logging-android/trunk</developerConnection>
     </scm>
     <distributionManagement>
         <repository>
