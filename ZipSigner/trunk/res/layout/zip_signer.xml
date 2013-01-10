@@ -3,7 +3,7 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:padding="10px"
+    android:padding="10sp"
     >
 
 
@@ -14,29 +14,29 @@
           android:layout_height="wrap_content"
           android:textSize="18sp"
           android:textStyle="bold"
-          ></TextView>
+          />
           
 <TextView android:text="Loading certificate and private key..." 
           android:id="@+id/SigningZipItemTextView" 
           android:layout_width="wrap_content" 
           android:layout_height="wrap_content"
           android:textSize="12sp"
-          android:layout_marginTop="10px"
-          ></TextView>
+          android:layout_marginTop="10sp"
+          />
           
 <ProgressBar android:id="@+id/SigningZipProgressBar" 
 			 android:layout_width="fill_parent" 
 			 android:layout_height="wrap_content"
-			 android:layout_marginTop="20px"
-			 android:layout_marginBottom="20px"
+			 android:layout_marginTop="20sp"
+			 android:layout_marginBottom="20sp"
 			 style="?android:attr/progressBarStyleHorizontal"
-			 ></ProgressBar>
+			 />
 			 
 <Button android:text="@string/CancelButtonLabel" 
         android:id="@+id/SigningZipCancelButton" 
         android:layout_width="wrap_content" 
         android:layout_height="wrap_content"
-        android:layout_marginTop="20px"
-        ></Button>
+        android:layout_marginTop="20sp"
+        />
         
 </LinearLayout>

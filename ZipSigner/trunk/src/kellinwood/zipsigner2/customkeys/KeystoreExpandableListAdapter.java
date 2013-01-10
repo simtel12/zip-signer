@@ -111,16 +111,6 @@ public class KeystoreExpandableListAdapter  extends BaseExpandableListAdapter
 
         } else textView = (TextView)convertView;
 
-//        // Layout parameters for the ExpandableListView
-//        AbsListView.LayoutParams lp = new AbsListView.LayoutParams(
-//                ViewGroup.LayoutParams.FILL_PARENT, 64);
-//
-//        TextView textView = new TextView(context);
-//        textView.setLayoutParams(lp);
-//        // Center the text vertically
-//        textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-//        // Set the text starting position
-//        textView.setPadding(36, 0, 0, 0);
         textView.setText(keystore.getPath()
                 + "\n" + (keystore.rememberPassword() ? 
                         context.getResources().getString(R.string.PasswordIsRemembered) : 
@@ -139,5 +129,11 @@ public class KeystoreExpandableListAdapter  extends BaseExpandableListAdapter
         return true;
     }
 
+    public Keystore lookupKeystoreByPath( String keystorePath) {
+        for (Keystore keystore : keystores) {
+            if (keystore.getPath().equals(keystorePath)) return keystore;
+        }
+        return null;
+    }
     
 }

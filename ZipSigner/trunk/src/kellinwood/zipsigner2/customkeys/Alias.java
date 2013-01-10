@@ -51,5 +51,22 @@ public class Alias {
     }
     public void setRememberPassword(boolean rememberPassword) {
         this.rememberPassword = rememberPassword;
-    }    
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Alias alias = (Alias) o;
+
+        if (id != alias.id) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (id ^ (id >>> 32));
+    }
 }

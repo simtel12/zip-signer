@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+import kellinwood.security.zipsigner.optional.CustomKeySigner;
+import kellinwood.security.zipsigner.optional.PasswordObfuscator;
 import kellinwood.zipsigner2.R;
 
 import kellinwood.logging.LoggerManager;
@@ -74,6 +76,7 @@ public class ZipSignerActivity extends Activity {
     String keystorePath;
     String keystorePassword;
     String keyPassword;
+    String signatureAlgorithm = "SHA1withRSA";
     boolean showProgressItems;
     boolean builtInKey;
 
@@ -128,6 +131,9 @@ public class ZipSignerActivity extends Activity {
                 break;
             }
         }
+
+        String alg = intent.getStringExtra("signatureAlgorithm");
+        if (alg != null) signatureAlgorithm = alg;
 
         Alias selectedAlias = null;
         if (!builtInKey) {
@@ -282,7 +288,8 @@ public class ZipSignerActivity extends Activity {
                     }
                     aliasPw = PasswordObfuscator.getInstance().decodeAliasPassword(keystorePath, keyAlias, keyPassword);
 
-                    zipSigner.signZip(keystoreFile.toURL(), "bks", keystorePw, keyAlias, aliasPw, inputFile, outputFile);
+                    CustomKeySigner.signZip(zipSigner, keystoreFile.getAbsolutePath(), keystorePw,
+                        keyAlias, aliasPw, signatureAlgorithm, inputFile, outputFile);
                 }
 
                 if (zipSigner.isCanceled()) 

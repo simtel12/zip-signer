@@ -37,6 +37,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import kellinwood.security.zipsigner.ZipSigner;
 
 
 /** App for signing zip, apk, and/or jar files on an Android device. 
@@ -57,9 +58,15 @@ public class ZipPickerActivity extends Activity {
     private static final String PREFERENCE_IN_FILE = "input_file";
     private static final String PREFERENCE_OUT_FILE = "output_file";
     private static final String PREFERENCE_KEY_INDEX = "key_index";
+    private static final String PREFERENCE_ALG_INDEX = "alg_index";
 
     AndroidLogger logger = null;
     KeyListSpinnerAdapter keyModeSpinnerAdapter = null;
+
+    Spinner algorithmSpinner = null;
+    ArrayAdapter algorithmSpinnerAdapter = null;
+    ArrayAdapter sha1WithRsaSpinnerAdapter = null;
+    ArrayAdapter allAlgorithmsSpinnerAdapter = null;
 
     /** Called when the activity is first created. */
     @Override
@@ -131,12 +138,64 @@ public class ZipPickerActivity extends Activity {
                 SharedPreferences.Editor editor = prefs.edit();
                 editor.putInt( PREFERENCE_KEY_INDEX, position);
                 editor.commit();
+                updateAlgorithmSpinner(position);
             }
             @Override
-            public void onNothingSelected(AdapterView<?> adapter) {
-            }
+            public void onNothingSelected(AdapterView<?> adapter) {}
         });
 
+        algorithmSpinner = (Spinner) findViewById(R.id.CertSignatureAlgorithm);
+        sha1WithRsaSpinnerAdapter = ArrayAdapter.createFromResource(this,
+            R.array.Sha1WithRsaAlgorithmArray, android.R.layout.simple_spinner_item);
+        sha1WithRsaSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        allAlgorithmsSpinnerAdapter = ArrayAdapter.createFromResource(this,
+            R.array.AllShaWithRsaAlgorithmsArray, android.R.layout.simple_spinner_item);
+        allAlgorithmsSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        updateAlgorithmSpinner(keyIndex);
+
+
+        algorithmSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view,
+                                       int position, long id) {
+                if (algorithmSpinnerAdapter.getCount() > 1) {
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putInt( PREFERENCE_ALG_INDEX, position);
+                    editor.commit();
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> adapter) {}
+        });
+    }
+
+    private void updateAlgorithmSpinner(int keyIndex) {
+        int selection = 0;
+        ArrayAdapter newAdapter = null;
+        if (keyIndex < ZipSigner.SUPPORTED_KEY_MODES.length) {
+            if (algorithmSpinnerAdapter != sha1WithRsaSpinnerAdapter) {
+                newAdapter = sha1WithRsaSpinnerAdapter;
+                selection = 0;
+                TextView tv = (TextView)findViewById(R.id.SignatureAlgorithmTextView);
+                tv.setVisibility(View.INVISIBLE);
+                algorithmSpinner.setVisibility(View.INVISIBLE);
+            }
+        } else {
+            if (algorithmSpinnerAdapter != allAlgorithmsSpinnerAdapter) {
+                newAdapter = allAlgorithmsSpinnerAdapter;
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                selection = prefs.getInt(PREFERENCE_ALG_INDEX, 2);
+                TextView tv = (TextView)findViewById(R.id.SignatureAlgorithmTextView);
+                tv.setVisibility(View.VISIBLE);
+                algorithmSpinner.setVisibility(View.VISIBLE);
+            }
+        }
+        if (newAdapter != null) {
+            algorithmSpinnerAdapter = newAdapter;
+            algorithmSpinner.setAdapter(algorithmSpinnerAdapter);
+            algorithmSpinner.setSelection(selection);
+        }
     }
 
     private String getInputFilename() {
@@ -174,19 +233,28 @@ public class ZipPickerActivity extends Activity {
             i.putExtra("inputFile", inputFile);
             i.putExtra("outputFile", outputFile);
 
+            // Optional parameters...
+
+            // keyMode defaults to "testkey" if not specified
             KeyEntry keyEntry = (KeyEntry)((Spinner)this.findViewById(R.id.KeyModeSpinner)).getSelectedItem();
             logger.debug(keyEntry.getDisplayName() + ", id="+keyEntry.getId());
             i.putExtra("keyMode", keyEntry.getDisplayName());
-            i.putExtra("customKeyId", keyEntry.getId());
 
-            // If "showProgressItems" is true, then the ZipSignerActivity displays the names of files in the 
+            // If "showProgressItems" is true, then the ZipSignerActivity displays the names of files in the
             // zip as they are generated/copied during the signature process.
-            i.putExtra("showProgressItems", "true"); 
+            i.putExtra("showProgressItems", "true");
 
             // Set the result code used to indicate that auto-key selection failed.  This will default to
             // RESULT_FIRST_USER if not set (same code used to signal an error).
             i.putExtra("autoKeyFailRC", RESULT_FIRST_USER+1);
-            
+
+            // Defaults to "SHA1withRSA" if not specified, and is ignored for the built-in keys
+            String signatureAlgorithm = (String)((Spinner)this.findViewById(R.id.CertSignatureAlgorithm)).getSelectedItem();
+            i.putExtra("signatureAlgorithm", signatureAlgorithm);
+
+            // If two non-builtin keys have the same name, using the ID ensures that we sign with the one selected.
+            i.putExtra("customKeyId", keyEntry.getId());
+
             // Activity is started and the result is returned via a call to onActivityResult(), below.
             startActivityForResult(i, REQUEST_CODE_SIGN_FILE);
 
@@ -231,17 +299,7 @@ public class ZipPickerActivity extends Activity {
         return false;
     }
 
-    protected void alertDialog( String title, String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(message).setTitle(title);
-        builder.setPositiveButton(R.string.OkButtonLabel, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.dismiss();
-            }
-        });
-        AlertDialog alertDialog = builder.create();
-        alertDialog.show();
-    }
+
 
     /**
      * Receives the result of other activities started with startActivityForResult(...)
@@ -333,7 +391,7 @@ public class ZipPickerActivity extends Activity {
                 // TODO display alert dialog?
                 // String errorMessage = data.getStringExtra("errorMessage");
                 String errorMessage = String.format( getResources().getString(R.string.KeySelectionMessage), getInputFilename());
-                alertDialog(getResources().getString(R.string.KeySelectionError), errorMessage);
+                AlertDialogUtil.alertDialog(this, getResources().getString(R.string.KeySelectionError), errorMessage);
                 break;
             default:
                 logger.error("onActivityResult, RESULT_FIRST_USER+1, unknown requestCode " + requestCode);

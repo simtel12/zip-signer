@@ -11,7 +11,7 @@
     <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
                  android:layout_height="wrap_content"
                  android:layout_width="fill_parent"
-                 android:padding="10px">
+                 android:padding="10sp">
         <TableRow>
             <!-- 
             <ImageView android:id="@+id/about_icon"
@@ -45,7 +45,7 @@
               android:textSize="18sp"
               android:textColor="#FFF"
               android:text="@string/AboutZipSignerVersionTemplate"
-              android:layout_marginTop="20px"
+              android:layout_marginTop="20sp"
               />
     <TextView android:id="@+id/about_author_view"
               android:layout_width="wrap_content"
@@ -67,7 +67,7 @@
               android:textSize="14sp"              
               android:textColor="#FFF"
               android:text="@string/AboutFmAttribution"
-              android:layout_marginTop="10px"
+              android:layout_marginTop="10sp"
               />                    
     <TextView android:id="@+id/about_fm_icons_attr_view"
               android:layout_width="wrap_content"
@@ -75,13 +75,13 @@
               android:textSize="14sp"              
               android:textColor="#FFF"
               android:text="@string/AboutFmIconsAttribution"
-              android:layout_marginTop="10px"
+              android:layout_marginTop="10sp"
               />                                                            
     <Button android:id="@+id/AboutCloseButton" 
   	    	android:text="@string/CloseButtonLabel"
    		    android:layout_width="wrap_content" 
    		    android:layout_height="wrap_content"
-   		    android:layout_marginTop="20px"
-   		    android:layout_marginBottom="20px"
+   		    android:layout_marginTop="20sp"
+   		    android:layout_marginBottom="20sp"
       		/>              
 </LinearLayout>

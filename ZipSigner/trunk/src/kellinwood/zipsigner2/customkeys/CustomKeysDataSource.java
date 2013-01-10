@@ -78,6 +78,20 @@ public class CustomKeysDataSource {
         }
     }
 
+    public void addKey( long keystoreId, Alias alias) {
+        ContentValues aliasValues = new ContentValues();
+        aliasValues.put(SQLiteHelper.ALIAS_COLUMN_KEYSTORE_ID, keystoreId);
+        aliasValues.put(SQLiteHelper.ALIAS_COLUMN_SELECTED, alias.isSelected() ? 1 : 0);
+        aliasValues.put(SQLiteHelper.ALIAS_COLUMN_NAME, alias.getName());
+        aliasValues.put(SQLiteHelper.ALIAS_COLUMN_DISPLAY_NAME, alias.getDisplayName());
+        if (!alias.rememberPassword()) alias.setPassword(null);
+        aliasValues.put(SQLiteHelper.ALIAS_COLUMN_PASSWORD, alias.getPassword());
+
+        long aliasId = database.insertOrThrow(SQLiteHelper.TABLE_ALIAS, null,
+            aliasValues);
+        alias.setId(aliasId);
+    }
+
     public List<Keystore> getAllKeystores() {
 
         List<Keystore> keystores = new ArrayList<Keystore>();
@@ -109,6 +123,54 @@ public class CustomKeysDataSource {
         cursor.close();
 
         return keystores;
+    }
+
+    public Keystore lookupKeystoreById( long keystoreId) {
+        Cursor cursor = database.query(SQLiteHelper.TABLE_KEYSTORE,
+            allKeystoreColumns, SQLiteHelper.KEYSTORE_COLUMN_ID + " = " + keystoreId, null, null, null, null);
+        cursor.moveToFirst();
+        Keystore keystore = cursorToKeystore(cursor);
+        cursor.close();
+
+        Map<Long, Keystore> keystoreMap = new HashMap<Long, Keystore>();
+        keystoreMap.put(keystore.getId(), keystore);
+
+        cursor = database.query(SQLiteHelper.TABLE_ALIAS, allAliasColumns,
+            SQLiteHelper.ALIAS_COLUMN_KEYSTORE_ID + " = " + keystoreId, null, null, null, null);
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            cursorToAlias(cursor, keystoreMap);
+            cursor.moveToNext();
+        }
+        // Make sure to close the cursor
+        cursor.close();
+
+        return keystore;
+    }
+
+    public Alias lookupAliasById( long id) {
+        Cursor cursor = database.query(SQLiteHelper.TABLE_ALIAS, new String[] { SQLiteHelper.ALIAS_COLUMN_KEYSTORE_ID},
+            SQLiteHelper.ALIAS_COLUMN_ID + " = " + id, null, null, null, null);
+        cursor.moveToFirst();
+        long keystoreId = cursor.getLong(0);
+        cursor.close();
+
+        cursor = database.query(SQLiteHelper.TABLE_KEYSTORE,
+            allKeystoreColumns, SQLiteHelper.KEYSTORE_COLUMN_ID + " = " + keystoreId, null, null, null, null);
+        cursor.moveToFirst();
+        Keystore keystore = cursorToKeystore(cursor);
+        Map<Long, Keystore> keystoreMap = new HashMap<Long, Keystore>();
+        keystoreMap.put(keystore.getId(), keystore);
+        cursor.close();
+
+        cursor = database.query(SQLiteHelper.TABLE_ALIAS, allAliasColumns,
+            SQLiteHelper.ALIAS_COLUMN_ID + " = " + id, null, null, null, null);
+        cursor.moveToFirst();
+        Alias result = cursorToAlias(cursor, keystoreMap);
+        cursor.close();
+
+        return result;
     }
 
     private Keystore cursorToKeystore(Cursor cursor) {
@@ -144,17 +206,20 @@ public class CustomKeysDataSource {
     public void deleteKeystore(Keystore keystore) {
 
         for (Alias alias : keystore.getAliases()) {
-            long id = alias.getId();
-            database.delete(SQLiteHelper.TABLE_ALIAS,
-                    SQLiteHelper.ALIAS_COLUMN_ID + " = " + id, null);
-            logger.debug("Alias deleted with id=" + id + ", name = " + alias.getName());
-            
+            deleteAlias(alias);
         }
         long id = keystore.getId();
         database.delete(SQLiteHelper.TABLE_KEYSTORE,
                 SQLiteHelper.KEYSTORE_COLUMN_ID + " = " + id, null);
         logger.debug("Keystore deleted with id=" + id + ", path=" + keystore.getPath());
         
+    }
+
+    public void deleteAlias(Alias alias) {
+        long id = alias.getId();
+        database.delete(SQLiteHelper.TABLE_ALIAS,
+            SQLiteHelper.ALIAS_COLUMN_ID + " = " + id, null);
+        logger.debug("Alias deleted with id=" + id + ", name = " + alias.getName());
     }
 
     public void updateKeystore( Keystore keystore) {
@@ -177,4 +242,6 @@ public class CustomKeysDataSource {
         aliasValues.put(SQLiteHelper.ALIAS_COLUMN_PASSWORD, alias.getPassword());
         database.update (SQLiteHelper.TABLE_ALIAS, aliasValues, SQLiteHelper.ALIAS_COLUMN_ID + " = " + alias.getId(), null);        
     }
+
+
 }

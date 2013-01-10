@@ -31,6 +31,8 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
+import kellinwood.security.zipsigner.optional.PasswordObfuscator;
+
 public class EnterPasswordDialog 
 {
     public static final String MSG_DATA_ID = "id";

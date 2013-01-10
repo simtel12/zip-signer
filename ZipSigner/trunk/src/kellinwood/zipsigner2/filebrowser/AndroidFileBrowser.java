@@ -1,5 +1,8 @@
 package kellinwood.zipsigner2.filebrowser;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.widget.AdapterView;
 import kellinwood.zipsigner2.R;
 
 import java.io.File;
@@ -25,6 +28,10 @@ import android.widget.Toast;
  */
 public class AndroidFileBrowser extends ListActivity {
 
+    public static final String DATA_KEY_START_PATH = "startPath";
+    public static final String DATA_KEY_REASON = "reason";
+    public static final String DATA_KEY_DIRECTORY_SELECT_MODE = "dirSelect";
+
 
     protected static final int SUB_ACTIVITY_REQUEST_CODE = 1337;
 
@@ -38,6 +45,8 @@ public class AndroidFileBrowser extends ListActivity {
     private Pattern packagePattern;
     private Pattern htmlPattern;
 
+    boolean directorySelectionMode = false;
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle icicle) {
@@ -50,12 +59,38 @@ public class AndroidFileBrowser extends ListActivity {
         htmlPattern = Pattern.compile( getString(R.string.fileEndingWebText));
 
         Intent i = getIntent();
-        String startPath = i.getExtras().getString("startPath");
+        String startPath = i.getExtras().getString(DATA_KEY_START_PATH);
         if (startPath == null) startPath = "/";
-        reason = i.getExtras().getString("reason");
+        reason = i.getExtras().getString(DATA_KEY_REASON);
         if (reason == null) reason = "";
+
+        directorySelectionMode = i.getExtras().getBoolean(DATA_KEY_DIRECTORY_SELECT_MODE,false);
+
+
+
         browseTo(new File(startPath));
         if (directoryEntries.size() > 0) this.setSelection(0);
+
+        if (directorySelectionMode) {
+            ListView lv = getListView();
+
+            lv.setOnItemLongClickListener( new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> av, View v, int pos, long id) {
+                    return onLongListItemClick(v,pos,id);
+                }
+            });
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage(R.string.BrowserDirectoryModeMessage).setTitle(R.string.BrowserDirectoryModeTitle);
+            builder.setPositiveButton(R.string.OkButtonLabel, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+        }
     }
 
     /*
@@ -161,7 +196,7 @@ public class AndroidFileBrowser extends ListActivity {
             if (currentFile.isDirectory()) {
                 currentIcon = getResources().getDrawable(R.drawable.folder);
             }
-            else {
+            else if (!directorySelectionMode) {
                 String fileName = currentFile.getName().toLowerCase();
                 /* Determine the Icon to be used, 
                  * depending on the FileEndings defined in:
@@ -182,6 +217,7 @@ public class AndroidFileBrowser extends ListActivity {
                     currentIcon = getResources().getDrawable(R.drawable.text);
                 }				
             }
+            else continue;
 
             /* Cut the current-path at the beginning */
             String currentFileName = currentFile.getAbsolutePath().substring(currentDirectoryNameLen);
@@ -214,6 +250,22 @@ public class AndroidFileBrowser extends ListActivity {
         }
     }
 
+    protected boolean onLongListItemClick(View v,int position, long id) {
+        int selectionRowID = position; // (int) this.getSelectedItemPosition();
+        String selectedFileString = this.directoryEntries.get(selectionRowID).getText();
+        if (selectedFileString.equals(getString(R.string.current_dir))) {
+            openFile(this.currentDirectory);
+        } else if(selectedFileString.equals(getString(R.string.up_one_level))){
+            // Ignore
+        } else {
+            File clickedFile = new File( new File(this.currentDirectory.getAbsolutePath()),
+                this.directoryEntries.get(selectionRowID).getText());
+            if(clickedFile != null)
+                openFile(clickedFile);
+        }
+        return true;
+    }
+
     /** Checks whether checkItsEnd ends with 
      * one of the Strings from fileEndings */
     private boolean checkEndsWithInStringArray(String checkItsEnd, 
@@ -224,4 +276,6 @@ public class AndroidFileBrowser extends ListActivity {
         }
         return false;
     }
+
+
 }

@@ -15,13 +15,17 @@
  */
 package kellinwood.zipsigner2.customkeys;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.util.Enumeration;
 import java.util.List;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.view.*;
+import android.widget.Button;
+
 import kellinwood.zipsigner2.R;
 import kellinwood.zipsigner2.ZipPickerActivity;
 
@@ -29,6 +33,9 @@ import kellinwood.logging.LoggerInterface;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
 import kellinwood.logging.android.AndroidLoggerFactory;
+import kellinwood.security.zipsigner.optional.KeyNameConflictException;
+import kellinwood.security.zipsigner.optional.PasswordObfuscator;
+import kellinwood.security.zipsigner.optional.KeyStoreFileManager;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -38,12 +45,8 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.view.ContextMenu;
-import android.view.MenuItem;
-import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnCreateContextMenuListener;
-import android.widget.Button;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
 
@@ -59,17 +62,27 @@ public class ManageKeysActivity extends Activity {
     static final int MESSAGE_CODE_KEYSTORE_REMEMBER_PASSWORD = 5;
     static final int MESSAGE_CODE_ALIAS_REMEMBER_PASSWORD = 6;
     static final int MESSAGE_CODE_ALIAS_DISPLAY_NAME = 7;
+    static final int MESSAGE_CODE_ALIAS_RENAME = 8;
+    static final int MESSAGE_CODE_ALIAS_DELETE = 9;
+    static final int MESSAGE_CODE_ALIAS_PROPERTIES = 10;
 
-    
     // codes used for inter-activity messsaging
     protected static final int REQUEST_CODE_PICK_KEYSTORE_FILE = 1;
+    protected static final int REQUEST_CODE_CREATE_KEYSTORE = 2;
+    protected static final int REQUEST_CODE_CREATE_KEY = 3;
+
 
     private static final int MENU_ITEM_REMOVE = 42;    
-    private static final int MENU_ITEM_KEYSTORE_REMEMBER_PASSWORD = 43;    
-    private static final int MENU_ITEM_KEYSTORE_FORGET_PASSWORD = 44;  
-    private static final int MENU_ITEM_ALIAS_REMEMBER_PASSWORD = 45;
-    private static final int MENU_ITEM_ALIAS_FORGET_PASSWORD = 46;
-    private static final int MENU_ITEM_ALIAS_DISPLAY_NAME = 47;
+    private static final int MENU_ITEM_KEYSTORE_REMEMBER_PASSWORD = 43;
+    private static final int MENU_ITEM_KEYSTORE_FORGET_PASSWORD = 44;
+    private static final int MENU_ITEM_KEYSTORE_CREATE_KEY = 45;
+
+    private static final int MENU_ITEM_ALIAS_REMEMBER_PASSWORD = 55;
+    private static final int MENU_ITEM_ALIAS_FORGET_PASSWORD = 56;
+    private static final int MENU_ITEM_ALIAS_DISPLAY_NAME = 57;
+    private static final int MENU_ITEM_ALIAS_RENAME = 58;
+    private static final int MENU_ITEM_ALIAS_DELETE = 59;
+    private static final int MENU_ITEM_ALIAS_PROPERTIES = 60;
 
     AndroidLogger logger = null;
 
@@ -80,38 +93,12 @@ public class ManageKeysActivity extends Activity {
 
     CustomKeysDataSource customKeysDataSource = null;
     ProgressDialog keystoreLoadingDialog = null;
-    
-    
-    
-    /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
 
-        super.onCreate(savedInstanceState);
+    boolean helpViewMode = false;
+
+    private void showKeystoreView() {
         setContentView(R.layout.manage_keys);
 
-        LoggerManager.setLoggerFactory( new AndroidLoggerFactory());
-
-        logger = (AndroidLogger)LoggerManager.getLogger(this.getClass().getName());
-        // enable toasts for info level logging.  toasts are default for error and warnings.
-        logger.setToastContext(getBaseContext());
-        logger.setInfoToastEnabled(true);
-
-
-        extStorageDir = Environment.getExternalStorageDirectory().toString();
-        // Strip /mnt from /sdcard
-        if (extStorageDir.startsWith("/mnt/sdcard")) extStorageDir = extStorageDir.substring(4);
-        
-        Button button = (Button) findViewById(R.id.AddKeystoreButton);
-        button.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View arg0) {
-                launchSelectKeystoreFile();
-            }
-        });
-    
-        customKeysDataSource = new CustomKeysDataSource(getBaseContext());
-        customKeysDataSource.open();
-        
         keystoreListView = (ExpandableListView)findViewById(R.id.KeystoreExpandableListView);
         keystoreExpandableListAdapter = new KeystoreExpandableListAdapter(this, customKeysDataSource.getAllKeystores());
         keystoreListView.setAdapter( keystoreExpandableListAdapter);
@@ -129,8 +116,7 @@ public class ManageKeysActivity extends Activity {
                 int type = ExpandableListView.getPackedPositionType(info.packedPosition);
                 int group = ExpandableListView.getPackedPositionGroup(info.packedPosition);
                 int child = ExpandableListView.getPackedPositionChild(info.packedPosition);
-                
-                //Only create a context menu for group items
+
                 if (type == ExpandableListView.PACKED_POSITION_TYPE_GROUP) {
                     List<Keystore> keystoreList = customKeysDataSource.getAllKeystores();
                     Keystore keystore = keystoreList.get( group);
@@ -138,11 +124,12 @@ public class ManageKeysActivity extends Activity {
                     menu.add(0, MENU_ITEM_REMOVE, 0, R.string.UnregisterMenuItemLabel);
                     if (keystore.rememberPassword())
                         menu.add( 0, MENU_ITEM_KEYSTORE_FORGET_PASSWORD, 0, R.string.ForgetPasswordMenuItemLabel);
-                    else 
+                    else
                         menu.add( 0, MENU_ITEM_KEYSTORE_REMEMBER_PASSWORD, 0, R.string.RememberPasswordMenuItemLabel);
+                    menu.add(0,  MENU_ITEM_KEYSTORE_CREATE_KEY, 0, R.string.CreateKeyMenuItemLabel);
                 }
                 else if (type == ExpandableListView.PACKED_POSITION_TYPE_CHILD) {
-                    
+
                     List<Keystore> keystoreList = customKeysDataSource.getAllKeystores();
                     Keystore keystore = keystoreList.get( group);
                     Alias alias = keystore.getAliases().get(child);
@@ -154,13 +141,74 @@ public class ManageKeysActivity extends Activity {
                         menu.add( 0, MENU_ITEM_ALIAS_REMEMBER_PASSWORD, 0, R.string.RememberPasswordMenuItemLabel);
                     }
                     menu.add( 0, MENU_ITEM_ALIAS_DISPLAY_NAME, 0, R.string.DisplayNameMenuItemLabel);
+                    menu.add( 0, MENU_ITEM_ALIAS_RENAME, 0, R.string.RenameKeyMenuItemLabel);
+                    menu.add( 0, MENU_ITEM_ALIAS_DELETE, 0, R.string.DeleteKeyMenuItemLabel);
+                    menu.add( 0, MENU_ITEM_ALIAS_PROPERTIES, 0, R.string.PropertiesMenuItemLabel);
                 }
             }
         });
+    }
+    
+    /** Called when the activity is first created. */
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
 
+        super.onCreate(savedInstanceState);
+
+        LoggerManager.setLoggerFactory(new AndroidLoggerFactory());
+
+        logger = (AndroidLogger)LoggerManager.getLogger(this.getClass().getName());
+        // enable toasts for info level logging.  toasts are default for error and warnings.
+        logger.setToastContext(getBaseContext());
+        logger.setInfoToastEnabled(true);
+
+
+        extStorageDir = Environment.getExternalStorageDirectory().toString();
+        // Strip /mnt from /sdcard
+        if (extStorageDir.startsWith("/mnt/sdcard")) extStorageDir = extStorageDir.substring(4);
+
+
+        customKeysDataSource = new CustomKeysDataSource(getBaseContext());
+        customKeysDataSource.open();
+
+        if (customKeysDataSource.getAllKeystores().size() == 0) {
+            helpViewMode = true;
+            setContentView(R.layout.manage_keys_help);
+            Button ok = (Button)findViewById(R.id.OkButton);
+            ok.setVisibility(View.INVISIBLE);
+        } else {
+            showKeystoreView();
+        }
     }
 
-    
+    /** Invoked via CreateCertFormActivity when the keystore/key creation process has been completed. */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        customKeysDataSource.open();
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            int requestCode = intent.getExtras().getInt(KeyParameters.REQUEST_CODE);
+            String keystorePath = intent.getExtras().getString(KeyParameters.KEYSTORE_FILENAME);
+            String keystorePassword = intent.getExtras().getString(KeyParameters.KEYSTORE_PASSWORD);
+            String keyName = intent.getExtras().getString(KeyParameters.KEY_NAME);
+
+            if (requestCode == REQUEST_CODE_CREATE_KEYSTORE)
+                new KeystoreLoader( keystorePath, keystorePassword, false).start();
+            else if (requestCode == REQUEST_CODE_CREATE_KEY) {
+                Keystore keystore = keystoreExpandableListAdapter.lookupKeystoreByPath( keystorePath);
+                Alias alias = new Alias();
+                alias.setName(keyName);
+                alias.setDisplayName(keyName);
+                alias.setRememberPassword(false);
+                alias.setSelected(true);
+                customKeysDataSource.addKey( keystore.getId(), alias);
+                keystoreExpandableListAdapter.dataChanged( customKeysDataSource.getAllKeystores());
+
+            } else logger.error( String.format( "onNewIntent() - unknown request code %d", requestCode));
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -171,6 +219,40 @@ public class ManageKeysActivity extends Activity {
     protected void onStop() {
         super.onStop();
         customKeysDataSource.close();
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.manage_keys_menu, menu);
+        return true;
+    }
+
+    /* Handles item selections */
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        switch (item.getItemId()) {
+            case R.id.MenuItemRegisterKeystore:
+                launchSelectKeystoreFile();
+                return true;
+            case R.id.MenuItemCreateKeystore:
+                Intent i = new Intent( ManageKeysActivity.this, CreateKeystoreIntroActivity.class);
+                i.putExtra(KeyParameters.REQUEST_CODE, REQUEST_CODE_CREATE_KEYSTORE);
+                startActivity(i);
+                return true;
+            case R.id.MenuItemKeysHelp:
+                if (!helpViewMode) {
+                    i = new Intent(this,ManageKeysHelpActivity.class);
+                    startActivity(i);
+                }
+                return true;
+            case R.id.MenuItemWebsite:
+                String targetURL = getString(R.string.MyKeysWebPage);
+                Intent wsi = new Intent( Intent.ACTION_VIEW, Uri.parse(targetURL));
+                startActivity(wsi);
+                return true;
+
+        }
+        return false;
     }
 
     public boolean onContextItemSelected(MenuItem item)
@@ -185,6 +267,9 @@ public class ManageKeysActivity extends Activity {
         case MENU_ITEM_KEYSTORE_FORGET_PASSWORD:
             doExpListContextMenuOp( item, MENU_ITEM_KEYSTORE_FORGET_PASSWORD);
             break;
+        case MENU_ITEM_KEYSTORE_CREATE_KEY:
+            doExpListContextMenuOp( item, MENU_ITEM_KEYSTORE_CREATE_KEY);
+            break;
         case MENU_ITEM_ALIAS_REMEMBER_PASSWORD:
             doExpListContextMenuOp( item, MENU_ITEM_ALIAS_REMEMBER_PASSWORD);
             break;
@@ -193,6 +278,15 @@ public class ManageKeysActivity extends Activity {
             break;
         case MENU_ITEM_ALIAS_DISPLAY_NAME:
             doExpListContextMenuOp( item, MENU_ITEM_ALIAS_DISPLAY_NAME);
+            break;
+        case MENU_ITEM_ALIAS_RENAME:
+            doExpListContextMenuOp( item, MENU_ITEM_ALIAS_RENAME);
+            break;
+        case MENU_ITEM_ALIAS_DELETE:
+            doExpListContextMenuOp( item, MENU_ITEM_ALIAS_DELETE);
+            break;
+        case MENU_ITEM_ALIAS_PROPERTIES:
+            doExpListContextMenuOp( item, MENU_ITEM_ALIAS_PROPERTIES);
             break;
         default:
             logger.error("Unknown context menu item ID: " + item.getItemId());
@@ -227,6 +321,26 @@ public class ManageKeysActivity extends Activity {
                 customKeysDataSource.updateKeystore( keystore);
                 keystoreExpandableListAdapter.dataChanged(keystoreList);
                 break;
+            case MENU_ITEM_KEYSTORE_CREATE_KEY:
+                String newKeyName = null;
+                boolean unique = false;
+                int num = 2;
+                while (!unique) {
+                    newKeyName = String.format("cert%d",num);
+                    boolean ok = true;
+                    for( Alias key: keystore.getAliases()) {
+                        if (key.getName().equals(newKeyName)) ok = false;
+                    }
+                    if (ok) unique = true;
+                    else num += 1;
+                }
+                Intent i = new Intent( this, CreateKeyFormActivity.class);
+                i.putExtra( KeyParameters.REQUEST_CODE, REQUEST_CODE_CREATE_KEY);
+                i.putExtra( KeyParameters.KEYSTORE_FILENAME, keystore.getPath());
+                if (keystore.rememberPassword()) i.putExtra( KeyParameters.KEYSTORE_PASSWORD, keystore.getPassword());
+                i.putExtra( KeyParameters.KEY_NAME, newKeyName);
+                startActivity(i);
+                break;
             case MENU_ITEM_ALIAS_REMEMBER_PASSWORD:
                 alias = keystore.getAliases().get( child);
                 EnterPasswordDialog.show(
@@ -245,11 +359,29 @@ public class ManageKeysActivity extends Activity {
                 EditDisplayNameDialog.show(this, handler, getResources().getString(R.string.DisplayNameMenuItemLabel),
                     MESSAGE_CODE_ALIAS_DISPLAY_NAME, alias.getId(), alias.getDisplayName());
                 break;
+            case MENU_ITEM_ALIAS_RENAME:
+                alias = keystore.getAliases().get( child);
+                RenameKeyDialog.show( this, handler, MESSAGE_CODE_ALIAS_RENAME, alias);
+                break;
+            case MENU_ITEM_ALIAS_DELETE:
+                alias = keystore.getAliases().get( child);
+                DeleteKeyDialog.show( this, handler, MESSAGE_CODE_ALIAS_DELETE, alias);
+                break;
+            case MENU_ITEM_ALIAS_PROPERTIES:
+                alias = keystore.getAliases().get( child);
+                if (!alias.rememberPassword()) {
+                    EnterPasswordDialog.show(
+                        ManageKeysActivity.this, handler, getResources().getString( R.string.EnterKeyPassword),
+                        MESSAGE_CODE_ALIAS_PROPERTIES, keystore.getPath(), alias.getId(), alias.getName());
+                } else handleShowKeyProperties( alias, null);
+                break;
             }
         }
         catch (Exception x) { logger.error(x.getMessage(), x); }        
     }
-    
+
+
+
     /**
      * Receives the result of other activities started with startActivityForResult(...)
      */
@@ -335,8 +467,11 @@ public class ManageKeysActivity extends Activity {
             case ManageKeysActivity.MESSAGE_CODE_KEYSTORE_LOADED:
                 if (keystoreLoadingDialog != null) keystoreLoadingDialog.dismiss(); keystoreLoadingDialog = null;
                 logger.debug("Keystore loaded.");
-                keystoreExpandableListAdapter.dataChanged(customKeysDataSource.getAllKeystores());
-                keystoreListView.expandGroup(keystoreExpandableListAdapter.getGroupCount()-1);
+                if (helpViewMode) showKeystoreView();
+                else {
+                    keystoreExpandableListAdapter.dataChanged(customKeysDataSource.getAllKeystores());
+                    keystoreListView.expandGroup(keystoreExpandableListAdapter.getGroupCount()-1);
+                }
                 break;
             case ManageKeysActivity.MESSAGE_CODE_KEYSTORE_LOAD_ERROR:
                 if (keystoreLoadingDialog != null) keystoreLoadingDialog.dismiss(); keystoreLoadingDialog = null;
@@ -363,6 +498,24 @@ public class ManageKeysActivity extends Activity {
                 break;
             case EnterPasswordDialog.MESSAGE_CODE_ENTER_PASSWORD_CANCELLED:
                 break; // ignore
+            case ManageKeysActivity.MESSAGE_CODE_ALIAS_RENAME:
+                aliasId = msg.getData().getLong(RenameKeyDialog.MSG_DATA_ALIAS_ID);
+                String newKeyName = msg.getData().getString(RenameKeyDialog.MSG_DATA_KEY_NAME);
+                String encodedKeystorePassword = msg.getData().getString(RenameKeyDialog.MSG_DATA_KEYSTORE_PASSWORD);
+                String encodedKeyPassword = msg.getData().getString(RenameKeyDialog.MSG_DATA_KEY_PASSWORD);
+                handleRenameAlias(aliasId, newKeyName, encodedKeystorePassword, encodedKeyPassword);
+                break;
+            case ManageKeysActivity.MESSAGE_CODE_ALIAS_DELETE:
+                aliasId = msg.getData().getLong(RenameKeyDialog.MSG_DATA_ALIAS_ID);
+                encodedKeystorePassword = msg.getData().getString(RenameKeyDialog.MSG_DATA_KEYSTORE_PASSWORD);
+                handleDeleteAlias(aliasId, encodedKeystorePassword);
+                break;
+            case ManageKeysActivity.MESSAGE_CODE_ALIAS_PROPERTIES:
+                aliasId = msg.getData().getLong(EnterPasswordDialog.MSG_DATA_ID);
+                Alias alias = customKeysDataSource.lookupAliasById( aliasId);
+                encodedPassword = msg.getData().getString(EnterPasswordDialog.MSG_DATA_PASSWORD);
+                handleShowKeyProperties( alias, encodedPassword);
+                break;
             default:
                 logger.error("Unknown message code " + msg.what);
                 break;
@@ -374,33 +527,26 @@ public class ManageKeysActivity extends Activity {
     void handleRememberKeystorePassword( long keystoreId, String keystorePath, String encodedPassword, boolean rememberPassword) {
         char[] password = null;
         try {
-            java.security.KeyStore ks = java.security.KeyStore.getInstance("bks");
-            FileInputStream fis = new FileInputStream( keystorePath);
+
+            java.security.KeyStore ks = KeyStoreFileManager.loadKeyStore(keystorePath, encodedPassword);
             password = PasswordObfuscator.getInstance().decodeKeystorePassword( keystorePath, encodedPassword);
-            ks.load( fis, password);
-            fis.close();     
-            List<Keystore> keystoreList = customKeysDataSource.getAllKeystores();
-            for (Keystore keystore : keystoreList) {
-                if (keystore.getId() == keystoreId) {
-                    keystore.setPassword(encodedPassword);
-                    keystore.setRememberPassword(true);
-                    customKeysDataSource.updateKeystore(keystore);
+            Keystore keystore = customKeysDataSource.lookupKeystoreById(keystoreId);
+            keystore.setPassword(encodedPassword);
+            keystore.setRememberPassword(true);
+            customKeysDataSource.updateKeystore(keystore);
                     
-                    for (Alias alias : keystore.getAliases()) {
-                        try {
-                            ks.getKey(alias.getName(), password);
-                            alias.setRememberPassword(rememberPassword);
-                            String keypw = PasswordObfuscator.getInstance().encodeAliasPassword( keystorePath,alias.getName(), password);
-                            alias.setPassword(keypw);
-                            customKeysDataSource.updateAlias(alias);
-                        } catch (Exception x) {
-                            logger.debug("Password for entry " + alias.getName() + " is not the same as the keystore password");
-                        }                                
-                    }
-                    keystoreExpandableListAdapter.dataChanged(keystoreList);
-                    break;
+            for (Alias alias : keystore.getAliases()) {
+                try {
+                    ks.getKey(alias.getName(), password);
+                    alias.setRememberPassword(rememberPassword);
+                    String keypw = PasswordObfuscator.getInstance().encodeAliasPassword( keystorePath,alias.getName(), password);
+                    alias.setPassword(keypw);
+                    customKeysDataSource.updateAlias(alias);
+                } catch (Exception x) {
+                    logger.debug("Password for entry " + alias.getName() + " is not the same as the keystore password");
                 }
             }
+            keystoreExpandableListAdapter.dataChanged(customKeysDataSource.getAllKeystores());
         } catch (Exception x) {
             if (x.getMessage().indexOf("integrity check failed") >= 0) {
                 logger.error(getResources().getString(R.string.WrongKeystorePassword));
@@ -419,38 +565,22 @@ public class ManageKeysActivity extends Activity {
 
     void handleRememberAliasPassword( long aliasId, String keystorePath, String encodedPassword, boolean rememberPassword) {
         char[] password = null;
-        Alias matchedAlias = null;
+        Alias alias = null;
         try {
-            List<Keystore> keystoreList = customKeysDataSource.getAllKeystores();
-            for (Keystore keystore : keystoreList) {
-                for (Alias alias : keystore.getAliases()) {
-                    if (alias.getId() == aliasId) {
-                        matchedAlias = alias;
-                        java.security.KeyStore ks = java.security.KeyStore.getInstance("bks");
-                        try {
-                            FileInputStream fis = new FileInputStream( keystore.getPath());
-                            if (keystore.getPassword() != null)
-                                password = PasswordObfuscator.getInstance().decodeKeystorePassword(keystore.getPath(), keystore.getPassword());
-                            ks.load( fis, password);
-                            fis.close();
-                        } catch (Exception x) {
-                            logger.error("Failed to open keystore - " + x.getMessage());
-                            return;
-                        }
-                        password = PasswordObfuscator.getInstance().decodeAliasPassword(keystore.getPath(),alias.getName(), encodedPassword);
-                        ks.getKey(alias.getName(), password);
-                        alias.setRememberPassword(rememberPassword);
-                        alias.setPassword(encodedPassword);
-                        customKeysDataSource.updateAlias(alias);
-                        keystoreExpandableListAdapter.dataChanged(keystoreList);
-                    }
-                }
-            }
+            alias = customKeysDataSource.lookupAliasById(aliasId);
+            java.security.KeyStore ks = KeyStoreFileManager.loadKeyStore( keystorePath, alias.getKeystore().getPassword());
+            password = PasswordObfuscator.getInstance().decodeAliasPassword(alias.getKeystore().getPath(),alias.getName(), encodedPassword);
+            ks.getKey(alias.getName(), password);
+            alias.setRememberPassword(rememberPassword);
+            alias.setPassword(encodedPassword);
+            customKeysDataSource.updateAlias(alias);
+            keystoreExpandableListAdapter.dataChanged(customKeysDataSource.getAllKeystores());
+
         } catch (UnrecoverableKeyException x) {
             logger.error(getResources().getString(R.string.WrongKeyPassword));
             EnterPasswordDialog.show(
                 ManageKeysActivity.this, handler, getResources().getString( R.string.EnterKeyPassword),
-                MESSAGE_CODE_ALIAS_REMEMBER_PASSWORD, keystorePath, aliasId, rememberPassword, matchedAlias.getName());
+                MESSAGE_CODE_ALIAS_REMEMBER_PASSWORD, keystorePath, aliasId, rememberPassword, alias.getName());
         } catch (Exception x) {
             logger.error("Error saving password - " + x.getMessage());
         }
@@ -461,18 +591,73 @@ public class ManageKeysActivity extends Activity {
 
     private void handleAliasDisplayName(long aliasId, String displayName) {
         try {
-            List<Keystore> keystoreList = customKeysDataSource.getAllKeystores();
-            for (Keystore keystore : keystoreList) {
-                for (Alias alias : keystore.getAliases()) {
-                    if (alias.getId() == aliasId) {
-                        alias.setDisplayName(displayName);
-                        customKeysDataSource.updateAlias(alias);
-                        keystoreExpandableListAdapter.dataChanged(keystoreList);
-                    }
-                }
-            }
+            Alias alias = customKeysDataSource.lookupAliasById(aliasId);
+            alias.setDisplayName(displayName);
+            customKeysDataSource.updateAlias(alias);
+            keystoreExpandableListAdapter.dataChanged(customKeysDataSource.getAllKeystores());
+
         } catch (Exception x) {
             logger.error("Error saving display name - " + x.getMessage());
+        }
+    }
+
+    void handleDeleteAlias( long aliasId, String storePass)
+    {
+        try {
+            Alias alias = customKeysDataSource.lookupAliasById(aliasId);
+            KeyStoreFileManager.deleteKey( alias.getKeystore().getPath(), storePass, alias.getName());
+            customKeysDataSource.deleteAlias(alias);
+            keystoreExpandableListAdapter.dataChanged( customKeysDataSource.getAllKeystores());
+        } catch (Exception x) {
+            logger.error( x.getMessage(), x);
+        }
+    }
+
+    void handleRenameAlias( long aliasId, String newKeyName, String storePass, String keyPass) {
+        Alias alias = customKeysDataSource.lookupAliasById(aliasId);
+        char[] keyPw = null;
+        if (alias.getName().equals(newKeyName)) return;
+        try {
+            newKeyName = KeyStoreFileManager.renameKey( alias.getKeystore().getPath(), storePass,
+                alias.getName(), newKeyName, keyPass);
+
+            if (alias.getName().equals(alias.getDisplayName())) alias.setDisplayName(newKeyName);
+
+            if (alias.rememberPassword()) {
+                keyPw = PasswordObfuscator.getInstance().decodeAliasPassword( alias.getKeystore().getPath(), alias.getName(), alias.getPassword());
+                alias.setPassword(PasswordObfuscator.getInstance().encodeAliasPassword( alias.getKeystore().getPath(), newKeyName, keyPw ));
+            }
+            alias.setName(newKeyName);
+
+            customKeysDataSource.updateAlias(alias);
+            keystoreExpandableListAdapter.dataChanged( customKeysDataSource.getAllKeystores());
+
+        } catch (KeyNameConflictException x) {
+            logger.error( String.format(getResources().getString(R.string.NameConflictMessage), newKeyName));
+        } catch (Exception x) {
+            logger.error( x.getMessage(), x);
+        }
+        finally {
+            if (keyPw != null) PasswordObfuscator.flush(keyPw);
+        }
+    }
+
+    private void handleShowKeyProperties(Alias alias, String password) {
+        try {
+            String thePassword = alias.rememberPassword() ? alias.getPassword() : password;
+            KeyStoreFileManager.validateKeyPassword(alias.getKeystore().getPath(), alias.getName(), thePassword);
+            Intent i = new Intent(this, KeysPropertiesActivity.class);
+            i.putExtra(KeyParameters.KEYSTORE_FILENAME, alias.getKeystore().getPath());
+            i.putExtra(KeyParameters.KEY_NAME, alias.getName());
+            i.putExtra(KeyParameters.KEY_PASSWORD, thePassword);
+            startActivity(i);
+        } catch (UnrecoverableKeyException x) {
+            logger.error(getResources().getString(R.string.WrongKeyPassword));
+            EnterPasswordDialog.show(
+                ManageKeysActivity.this, handler, getResources().getString( R.string.EnterKeyPassword),
+                MESSAGE_CODE_ALIAS_PROPERTIES, alias.getKeystore().getPath(), alias.getId(), alias.getName());
+        } catch (Exception x) {
+            logger.error("Error validating password - " + x.getMessage(), x);
         }
     }
 
@@ -481,6 +666,8 @@ public class ManageKeysActivity extends Activity {
         // TODO Auto-generated method stub
         super.onConfigurationChanged(newConfig);
     }
+
+
 
     class KeystoreLoader extends Thread {
         
@@ -496,23 +683,28 @@ public class ManageKeysActivity extends Activity {
             this.encodedPassword = encodedPassword;
             this.rememberPassword = rememberPassword;
         }
+
+
         
         public void run() {
             char[] password = null;
             try {
-                java.security.KeyStore ks = java.security.KeyStore.getInstance("bks");
-                FileInputStream fis = new FileInputStream( keystorePath);
-                password = PasswordObfuscator.getInstance().decodeKeystorePassword( keystorePath, encodedPassword);
-                ks.load( fis, password);
-                fis.close();
-                
+                java.security.KeyStore ks = KeyStoreFileManager.loadKeyStore(keystorePath, encodedPassword);
+
                 Keystore keystore = new Keystore();
                 keystore.setPath( keystorePath);
                 keystore.setRememberPassword( rememberPassword);
                 keystore.setPassword( encodedPassword);
-                
+
+                password = PasswordObfuscator.getInstance().decodeKeystorePassword( keystorePath,encodedPassword);
+
                 for (Enumeration<String> e = ks.aliases(); e.hasMoreElements(); ) {
+
                     String aliasName = e.nextElement();
+
+                    // Ignore secret keys and trusted certs
+                    if (!ks.isKeyEntry( aliasName)) return;
+
                     Alias alias = new Alias();
                     alias.setName(aliasName);
                     alias.setDisplayName(aliasName);
@@ -537,7 +729,7 @@ public class ManageKeysActivity extends Activity {
                     logger.warning("IOException: cause="+x.getCause().getClass().getName(), x);
                 else logger.warning("IOException: cause=null");
                 
-                if (x.getMessage().indexOf("integrity check failed") >= 0) {
+                if (x.getMessage() != null && x.getMessage().indexOf("integrity check failed") >= 0) {
                     sendMessage( MESSAGE_CODE_BAD_KEYSTORE_PASSWORD,null);
                 } 
                 else {
@@ -555,7 +747,8 @@ public class ManageKeysActivity extends Activity {
                 if (password != null) PasswordObfuscator.flush(password);
             }
         }
-        
+
+
         void sendMessage( int msgCode, String message) {
             Message msg = new Message();
             msg.what = msgCode;
