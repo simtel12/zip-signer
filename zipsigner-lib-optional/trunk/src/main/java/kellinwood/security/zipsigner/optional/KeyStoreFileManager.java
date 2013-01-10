@@ -28,11 +28,6 @@ public class KeyStoreFileManager {
         Security.addProvider(getBcProvider());
     }
 
-    static String externalStorageDir = "";
-
-    public static void setExternalStorageDir( String _externalStorageDir) {
-        externalStorageDir = _externalStorageDir;
-    }
 
     public static KeyStore loadKeyStore( String keystorePath, String encodedPassword)
         throws Exception{
@@ -95,9 +90,6 @@ public class KeyStoreFileManager {
     public static void writeKeyStore( KeyStore ks, String keystorePath, char[] password)
         throws Exception
     {
-        if (keystorePath.startsWith("/sdcard") && externalStorageDir.startsWith("/mnt/sdcard")) {
-            keystorePath = "/mnt" + keystorePath;
-        }
 
         File keystoreFile = new File( keystorePath);
         try {
@@ -109,6 +101,7 @@ public class KeyStoreFileManager {
                 ks.store(fos, password);
                 fos.flush();
                 fos.close();
+                /* create a backup of the previous version
                 int i = 1;
                 File backup = new File( keystorePath + "." + i + ".bak");
                 while (backup.exists()) {
@@ -116,6 +109,7 @@ public class KeyStoreFileManager {
                     backup = new File( keystorePath + "." + i + ".bak");
                 }
                 renameTo(keystoreFile, backup);
+                */
                 renameTo(tmpFile, keystoreFile);
             } else {
                 FileOutputStream fos = new FileOutputStream( keystorePath);

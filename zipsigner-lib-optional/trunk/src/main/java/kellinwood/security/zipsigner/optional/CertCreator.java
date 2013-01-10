@@ -111,8 +111,8 @@ public class CertCreator {
             }
             v3CertGen.setSerialNumber(serialNumber);
             v3CertGen.setIssuerDN( principal);
-            v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-            v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 366 * certValidityYears)));
+            v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60L * 60L * 24L * 30L));
+            v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60L * 60L * 24L * 366L * (long)certValidityYears)));
             v3CertGen.setSubjectDN(principal);
 
             v3CertGen.setPublicKey(KPair.getPublic());
