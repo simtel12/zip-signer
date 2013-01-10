@@ -41,7 +41,7 @@ This project currently depends on other libraries:
   This JAR is typically required in order to sign with private keys or
   create self-signed certificates for publishing apps.  If you include this
   file in your project, then you will also need to include the SpongyCastle
-  JARS (sc-light, scprov, and scpix from http://rtyley.github.com/spongycastle/).
+  JARS (sc-light, scprov, and scpkix from http://rtyley.github.com/spongycastle/).
   SpongyCastle is an Android-friendly version of BouncyCastle.
 
 - For use in normal desktop JRE applications, you must install Bouncy 
@@ -140,7 +140,7 @@ adb shell setprop log.tag.ZipSigner VERBOSE
 adb logcat ZipSigner:*
 
 
-SIGNING WITH OTHER CERTIFICATES
+SIGNING WITH OTHER KEYS/CERTIFICATES
 
     // Load an x509.pem public key certificate.  E.g., "file:///sdcard/mycert.x509.pem"
     public X509Certificate readPublicKey(URL publicKeyUrl);
@@ -169,6 +169,20 @@ OR
                          String certPw, 
                          String inputZipFilename, 
                          String outputZipFilename);
+
+OR
+
+    /** KeyStore-type agnostic.  This method will sign the zip file, automatically 
+        handling JKS or BKS keystores, even on Android. 
+    */
+    kellinwood.security.zipsigner.optional.signZip( ZipSigner zipSigner,
+                         String keystorePath,
+                         char[] keystorePw,
+                         String certAlias,
+                         char[] certPw,
+                         String signatureAlgorithm,
+                         String inputZipFilename,
+                         String outputZipFilename)
 
 
 KEYSTORE CREATION
