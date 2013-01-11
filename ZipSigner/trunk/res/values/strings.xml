@@ -80,13 +80,15 @@
         The following screens will guide you through the process of creating a new keystore, private-key, and self-signed
         certificate that can be used to sign apps for publishing on Google Play.  To create a new key in an existing keystore,
         return to the previous screen and long-press on a keystore entry, then select "Create Key" from the context menu.
+        </string>
+    <string name="NewKeystoreIntroP2">
         This process creates a JKS keystore by default.  To create a BKS keystore, change the keystore file extension to \'.bks\'
     </string>
-    <string name="NewKeystoreIntroP2">
+    <string name="NewKeystoreIntroP3">
         Don\'t forget the password you choose for your key during this process.  Also, be sure to backup the keystore file.
         If you ever forget the key password or lose the keystore file, you won\'t be able to publish updates to your apps.
     </string>
-    <string name="NewKeystoreIntroP3">
+    <string name="NewKeystoreIntroP4">
         The default values shown on the following screens will create a suitable key for signing apps.
     </string>
     <string name="MenuKeysHelp">Help</string>
