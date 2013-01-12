@@ -162,9 +162,9 @@
     </string>
     <string name="CommonNameLabel">Your Name</string>
     <string name="OrganizationalUnitLabel">Department/Unit</string>
-    <string name="OrganizationLabel">Company/Ogranization</string>
+    <string name="OrganizationLabel">Company/Organization</string>
     <string name="StreetLabel">Street Address</string>
-    <string name="StateLabel">State/Providence</string>
+    <string name="StateLabel">State/Province</string>
     <string name="LocalityLabel">City/Locality</string>
     <string name="CountryLabel">Country Code</string>
     <string name="InvalidValidity">Invalid validity.</string>

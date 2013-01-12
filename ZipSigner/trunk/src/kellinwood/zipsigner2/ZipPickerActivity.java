@@ -58,7 +58,7 @@ public class ZipPickerActivity extends Activity {
     private static final String PREFERENCE_IN_FILE = "input_file";
     private static final String PREFERENCE_OUT_FILE = "output_file";
     private static final String PREFERENCE_KEY_INDEX = "key_index";
-    private static final String PREFERENCE_ALG_INDEX = "alg_index";
+    private static final String PREFERENCE_ALG_INDEX = "alg_idx";
 
     AndroidLogger logger = null;
     KeyListSpinnerAdapter keyModeSpinnerAdapter = null;
@@ -185,7 +185,7 @@ public class ZipPickerActivity extends Activity {
             if (algorithmSpinnerAdapter != allAlgorithmsSpinnerAdapter) {
                 newAdapter = allAlgorithmsSpinnerAdapter;
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-                selection = prefs.getInt(PREFERENCE_ALG_INDEX, 2);
+                selection = prefs.getInt(PREFERENCE_ALG_INDEX, 0);
                 TextView tv = (TextView)findViewById(R.id.SignatureAlgorithmTextView);
                 tv.setVisibility(View.VISIBLE);
                 algorithmSpinner.setVisibility(View.VISIBLE);

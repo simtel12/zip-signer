@@ -49,7 +49,7 @@ public class CreateCertFormActivity extends Activity {
             R.array.AllShaWithRsaAlgorithmsArray, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
-        spinner.setSelection(2);
+        spinner.setSelection(0);
 
 
         Button cancelButton = (Button)findViewById(R.id.CancelButton);
