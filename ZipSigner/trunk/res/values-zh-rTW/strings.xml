@@ -145,16 +145,7 @@
     <string name="CertParametersTitle">證書信息</string>
     <string name="CertValidityYearsLabel">有效期（年）</string>
     <string name="CertSignatureAlgorithmLabel">證書簽名算法</string>
-    <string-array name="Sha1WithRsaAlgorithmArray">
-        <item>SHA1 + RSA</item>
-    </string-array>
-    <string-array name="AllShaWithRsaAlgorithmsArray">
-        <item>SHA1 + RSA</item>
-        <item>SHA224 + RSA</item>
-        <item>SHA256 + RSA</item>
-        <item>SHA384 + RSA</item>
-        <item>SHA512 + RSA</item>
-    </string-array>
+
     <string name="DnInstructions">
         請填寫以下信息以確認您本人或您公司。
         此信息將牽制公共證書以及私鑰，並在包含在生成私鑰簽名中。您可

@@ -145,16 +145,7 @@
     <string name="CertParametersTitle">Certificate Info</string>
     <string name="CertValidityYearsLabel">Validity (years)</string>
     <string name="CertSignatureAlgorithmLabel">Certificate Signature Algorithm</string>
-    <string-array name="Sha1WithRsaAlgorithmArray">
-        <item>SHA1withRSA</item>
-    </string-array>
-    <string-array name="AllShaWithRsaAlgorithmsArray">
-        <item>SHA1withRSA</item>
-        <item>SHA224withRSA</item>
-        <item>SHA256withRSA</item>
-        <item>SHA384withRSA</item>
-        <item>SHA512withRSA</item>
-    </string-array>
+
     <string name="DnInstructions">
         Please fill in the following information to identify yourself and/or your company.
         This information is contained in the public certificate paired with the key, and is included in the signatures
