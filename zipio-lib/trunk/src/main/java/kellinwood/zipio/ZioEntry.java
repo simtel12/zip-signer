@@ -262,7 +262,7 @@ public class ZioEntry implements Cloneable {
         numAlignBytes = 0;
 
         // Zipalign if the file is uncompressed, i.e., "Stored", and file size is not zero.
-        if (compression == 0 && size > 0) {
+        if (compression == 0) {
 
             long dataPos = output.getFilePointer() + // current position
             2 +                                  // plus size of extra data length
