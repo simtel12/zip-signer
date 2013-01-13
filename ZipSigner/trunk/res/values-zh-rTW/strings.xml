@@ -26,7 +26,7 @@
 	<string name="AboutZipSignerVersionTemplate">版本： %s</string>
 	<string name="AboutZipSignerDescription">簽名 ZIP、APK、JAR 文件</string>
 	<string name="AboutZipSignerAuthor">作者： Ken Ellinwood</string>
-	<string name="AboutZipSignerCopyright">Copyright 2010,2012. All rights reserved.</string>
+	<string name="AboutZipSignerCopyright">Copyright 2010-2013. All rights reserved.</string>
 	<string name="AboutFmAttribution">文件浏覽器源碼基于 http://www.anddev.org/android_filebrowser__v20-t101.html</string>
 	<string name="AboutFmIconsAttribution">文件浏覽器圖標從Tango Icon Gallery 獲取，http://tango.freedesktop.org</string>
 	
