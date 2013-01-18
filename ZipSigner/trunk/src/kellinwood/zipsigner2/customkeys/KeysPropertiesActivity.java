@@ -3,7 +3,8 @@ package kellinwood.zipsigner2.customkeys;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.text.Layout;
+import android.text.ClipboardManager;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,12 +14,12 @@ import android.widget.TextView;
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
 import kellinwood.logging.android.AndroidLoggerFactory;
+import kellinwood.security.zipsigner.optional.Fingerprint;
 import kellinwood.security.zipsigner.optional.KeyStoreFileManager;
 import kellinwood.zipsigner2.R;
 import org.spongycastle.asn1.x509.X509Name;
 import org.spongycastle.jce.PrincipalUtil;
 import org.spongycastle.jce.X509Principal;
-
 
 import java.security.cert.Certificate;
 import java.security.KeyStore;
@@ -98,12 +99,36 @@ public class KeysPropertiesActivity extends Activity {
                 }
 
             }
+            byte[] encodedCert = certificate.getEncoded();
+
+
+            View.OnCreateContextMenuListener copyContextMenuListener =
+                new View.OnCreateContextMenuListener() {
+                    @Override
+                    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                        menu.add(0, v.getId(), 0, R.string.CopyToClipboardMenuItemLabel);
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                        clipboard.setText(((TextView)v).getText());
+                    }
+                };
+
+            TextView md5FingerprintView = (TextView)findViewById(R.id.MD5Fingerprint);
+            md5FingerprintView.setText(Fingerprint.hexFingerprint("MD5", encodedCert));
+            md5FingerprintView.setOnCreateContextMenuListener(copyContextMenuListener);
+
+            TextView sha1FingerprintView = (TextView)findViewById(R.id.SHA1Fingerprint);
+            sha1FingerprintView.setText(Fingerprint.hexFingerprint("SHA1", encodedCert));
+            sha1FingerprintView.setOnCreateContextMenuListener(copyContextMenuListener);
+
+            TextView sha1KeyHashView = (TextView)findViewById(R.id.SHA1KeyHash);
+            sha1KeyHashView.setText(Fingerprint.base64Fingerprint("SHA1", encodedCert));
+            sha1KeyHashView.setOnCreateContextMenuListener(copyContextMenuListener);
 
         } catch (Exception x) {
             logger.error(x.getMessage(), x);
         }
 
-        Button button = (Button)findViewById(R.id.OkButton);
+        Button button = (Button)findViewById(R.id.BackButton);
         button.setOnClickListener( new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -123,4 +148,5 @@ public class KeysPropertiesActivity extends Activity {
             layout.addView(v);
         }
     }
+
 }

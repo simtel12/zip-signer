@@ -181,5 +181,13 @@
     <string name="IssuerDN">Issuer DN</string>
     <string name="KeystorePasswordRequired">Keystore password is required</string>
 
+    <string name="BackButtonLabel">Back</string>
+    <string name="MD5FingerprintLabel">MD5</string>
+    <string name="SHA1FingerprintLabel">SHA1</string>
+    <string name="SHA1KeyHashLabel">SHA1 Key Hash</string>
+    <string name="CopyToClipboardMenuItemLabel">Copy To Clipboard</string>
+    <string name="FingerprintsLabel">Fingerprints</string>
+    <string name="FingerprintCopyInstructions">Long-press on a fingerprint to copy its value</string>
+
 
 </resources>

@@ -160,12 +160,71 @@
                 />
         </LinearLayout>
 
-        <Button android:text="@string/OkButtonLabel"
-                android:id="@+id/OkButton"
+        <TextView android:text="@string/FingerprintsLabel"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+                  android:textStyle="bold"
+                  android:layout_marginTop="10sp"
+            />
+        <TextView android:text="@string/FingerprintCopyInstructions"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+            />
+
+        <TextView android:text="@string/MD5FingerprintLabel"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+                  android:textStyle="bold"
+                  android:layout_marginTop="10sp"
+            />
+        <TextView android:id="@+id/MD5Fingerprint"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+            />
+
+        <TextView android:text="@string/SHA1FingerprintLabel"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+                  android:textStyle="bold"
+                  android:layout_marginTop="10sp"
+            />
+        <TextView android:id="@+id/SHA1Fingerprint"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+            />
+
+        <TextView android:text="@string/SHA1KeyHashLabel"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+                  android:textStyle="bold"
+                  android:layout_marginTop="10sp"
+            />
+
+        <TextView android:id="@+id/SHA1KeyHash"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:textSize="16sp"
+            />
+
+        <View android:layout_width="fill_parent"
+              android:layout_height="2dip"
+              android:background="#FF909090"
+              android:layout_marginTop="10sp"/>
+
+        <Button android:text="@string/BackButtonLabel"
+                android:id="@+id/BackButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:layout_marginTop="30sp"
+                android:minWidth="100sp"
             />
 
     </LinearLayout>
