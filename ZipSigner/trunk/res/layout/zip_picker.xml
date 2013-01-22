@@ -48,7 +48,7 @@
                   android:id="@+id/InFileEditText"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:inputType="text"
+                  android:inputType="textNoSuggestions"
                   android:minWidth="500sp"
                   android:maxWidth="500sp"
             />
@@ -68,7 +68,7 @@
                   android:id="@+id/OutFileEditText"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:inputType="text"
+                  android:inputType="textNoSuggestions"
                   android:minWidth="500sp"
                   android:maxWidth="500sp"
                   />

@@ -3,6 +3,7 @@ package kellinwood.zipsigner2.filebrowser;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.widget.AdapterView;
+import kellinwood.zipsigner2.AlertDialogUtil;
 import kellinwood.zipsigner2.R;
 
 import java.io.File;
@@ -81,33 +82,13 @@ public class AndroidFileBrowser extends ListActivity {
                 }
             });
 
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage(R.string.BrowserDirectoryModeMessage).setTitle(R.string.BrowserDirectoryModeTitle);
-            builder.setPositiveButton(R.string.OkButtonLabel, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                    dialog.dismiss();
-                }
-            });
-            AlertDialog alertDialog = builder.create();
-            alertDialog.show();
+            AlertDialogUtil.alertDialog(this,
+                R.string.BrowserDirectoryModeTitle,
+                R.string.BrowserDirectoryModeMessage,
+                R.string.OkButtonLabel);
         }
     }
 
-    /*
-    private void errorDialog( String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(message)
-        .setCancelable(false)
-        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int id) {
-                dialog.cancel();
-            }
-        });
-        AlertDialog alert = builder.create();
-        alert.show();        
-    }
- */
-    
     /**
      * This function browses to the 
      * root-directory of the file-system.

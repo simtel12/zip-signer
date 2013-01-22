@@ -126,8 +126,8 @@ public class ZipPickerActivity extends Activity {
         });        
         
         Spinner spinner = (Spinner) findViewById(R.id.KeyModeSpinner);
-        keyModeSpinnerAdapter = KeyListSpinnerAdapter.createInstance(this, R.layout.spinner_target);
-        // keyModeSpinnerAdapter.setDropDownViewResource(R.layout.spinner_row);
+        keyModeSpinnerAdapter = KeyListSpinnerAdapter.createInstance(this, android.R.layout.simple_spinner_item);
+        keyModeSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(keyModeSpinnerAdapter);
         if (keyIndex >= keyModeSpinnerAdapter.getCount()) keyIndex = 0;
         spinner.setSelection(keyIndex);

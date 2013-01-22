@@ -30,4 +30,8 @@ public class KeyEntry {
     public void setHasPassword(boolean hasPassword) {
         this.hasPassword = hasPassword;
     }
+
+    public String toString() {
+        return displayName;
+    }
 }

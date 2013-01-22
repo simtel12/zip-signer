@@ -26,7 +26,6 @@
                        android:layout_height="fill_parent"
                        android:textSize="24sp"
                        android:textStyle="bold"              
-                       android:textColor="#FFF"
                        android:text="@string/AboutZipSignerBanner"
               />
         </TableRow>
@@ -36,14 +35,12 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textSize="18sp"              
-              android:textColor="#FFF"
               android:text="@string/AboutZipSignerDescription"
               />
     <TextView android:id="@+id/about_version_view"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textSize="18sp"
-              android:textColor="#FFF"
               android:text="@string/AboutZipSignerVersionTemplate"
               android:layout_marginTop="20sp"
               />
@@ -51,21 +48,18 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textSize="18sp"              
-              android:textColor="#FFF"
               android:text="@string/AboutZipSignerAuthor"
               />        
     <TextView android:id="@+id/about_copyright_view"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textSize="14sp"              
-              android:textColor="#FFF"
               android:text="@string/AboutZipSignerCopyright"
               />                                   
     <TextView android:id="@+id/about_fm_attr_view"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textSize="14sp"              
-              android:textColor="#FFF"
               android:text="@string/AboutFmAttribution"
               android:layout_marginTop="10sp"
               />                    
@@ -73,7 +67,6 @@
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:textSize="14sp"              
-              android:textColor="#FFF"
               android:text="@string/AboutFmIconsAttribution"
               android:layout_marginTop="10sp"
               />                                                            

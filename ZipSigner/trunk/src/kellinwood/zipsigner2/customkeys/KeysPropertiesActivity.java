@@ -106,6 +106,7 @@ public class KeysPropertiesActivity extends Activity {
                 new View.OnCreateContextMenuListener() {
                     @Override
                     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+                        menu.setHeaderTitle((String)v.getTag());
                         menu.add(0, v.getId(), 0, R.string.CopyToClipboardMenuItemLabel);
                         ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                         clipboard.setText(((TextView)v).getText());
@@ -114,14 +115,17 @@ public class KeysPropertiesActivity extends Activity {
 
             TextView md5FingerprintView = (TextView)findViewById(R.id.MD5Fingerprint);
             md5FingerprintView.setText(Fingerprint.hexFingerprint("MD5", encodedCert));
+            md5FingerprintView.setTag(getResources().getString(R.string.MD5FingerprintLabel));
             md5FingerprintView.setOnCreateContextMenuListener(copyContextMenuListener);
 
             TextView sha1FingerprintView = (TextView)findViewById(R.id.SHA1Fingerprint);
             sha1FingerprintView.setText(Fingerprint.hexFingerprint("SHA1", encodedCert));
+            sha1FingerprintView.setTag(getResources().getString(R.string.SHA1FingerprintLabel));
             sha1FingerprintView.setOnCreateContextMenuListener(copyContextMenuListener);
 
             TextView sha1KeyHashView = (TextView)findViewById(R.id.SHA1KeyHash);
             sha1KeyHashView.setText(Fingerprint.base64Fingerprint("SHA1", encodedCert));
+            sha1KeyHashView.setTag(getResources().getString(R.string.SHA1KeyHashLabel));
             sha1KeyHashView.setOnCreateContextMenuListener(copyContextMenuListener);
 
         } catch (Exception x) {

@@ -60,12 +60,11 @@
         <plugins>
             <plugin>
                 <groupId>com.jayway.maven.plugins.android.generation2</groupId>
-                <artifactId>maven-android-plugin</artifactId>
-                <version>2.6.0</version>
+                <artifactId>android-maven-plugin</artifactId>
                 <configuration>
                     <sdk>
                         <!-- platform or api level (api level 4 = platform 1.6)-->
-                        <platform>4</platform>
+                        <platform>17</platform>
                     </sdk>
                     <emulator>
                         <!-- the name of the avd device to use for starting the emulator -->

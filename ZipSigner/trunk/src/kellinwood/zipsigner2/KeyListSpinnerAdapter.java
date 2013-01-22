@@ -1,14 +1,7 @@
 package kellinwood.zipsigner2;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.text.Layout;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.TextView;
 import kellinwood.security.zipsigner.ZipSigner;
 import kellinwood.zipsigner2.customkeys.Alias;
 import kellinwood.zipsigner2.customkeys.CustomKeysDataSource;
@@ -82,26 +75,4 @@ public class KeyListSpinnerAdapter extends ArrayAdapter<KeyEntry> {
         super.notifyDataSetChanged();
     }
 
-    // And the "magic" goes here
-    // This is for the "passive" state of the spinner
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        View view = super.getView(position, convertView, parent);
-        if (view instanceof TextView) {
-            TextView label = (TextView)view;
-            label.setText(values.get(position).getDisplayName());
-        }
-        return view;
-    }
-
-    // And here is when the "chooser" is popped up
-    // Normally is the same view, but you can customize it if you want
-    @Override
-    public View getDropDownView(int position, View convertView, ViewGroup parent) {
-
-        LayoutInflater inflater = LayoutInflater.from(context);
-        TextView view = (TextView)inflater.inflate(R.layout.spinner_row, null);
-        view.setText(values.get(position).getDisplayName());
-        return view;
-    }
 }
