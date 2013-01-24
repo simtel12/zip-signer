@@ -39,12 +39,12 @@
         <dependency>
             <groupId>kellinwood.android</groupId>
             <artifactId>zipsigner-lib</artifactId>
-            <version>1.14</version>
+            <version>1.15</version>
         </dependency>
         <dependency>
             <groupId>kellinwood.android</groupId>
             <artifactId>zipsigner-lib-optional</artifactId>
-            <version>1.14</version>
+            <version>1.15</version>
         </dependency>
         <dependency>
             <groupId>com.google.android</groupId>

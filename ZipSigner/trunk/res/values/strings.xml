@@ -3,9 +3,9 @@
     <string name="app_name">ZipSigner 2</string>
 	
 	<string name="InputZipLabel">Input File (zip/apk/jar)</string>
-	<string name="InOutPickButtonLabel">Choose In/Out...</string>	
-	<string name="OpenPickButtonLabel">Input...</string>
-	<string name="SaveAsPickButtonLabel">Output...</string>
+	<string name="InOutPickButtonLabel">Choose In/Out…</string>
+	<string name="OpenPickButtonLabel">Input…</string>
+	<string name="SaveAsPickButtonLabel">Output…</string>
 	<string name="SignedZipLabel">Signed Output File</string>	
 	<string name="KeyModeLabel">Key/mode: </string>
     <string name="SignatureAlgorithmLabel">Signature Algorithm</string>
@@ -189,5 +189,17 @@
     <string name="FingerprintsLabel">Fingerprints</string>
     <string name="FingerprintCopyInstructions">Long-press on a fingerprint to copy its value</string>
 
+    <!-- Progress messages -->
+    <string name="LoadingCertificateAnKey">Loading certificate and private key</string>
+    <string name="ParsingCentralDirectory">Parsing the input\'s central directory</string>
+    <string name="GeneratingManifest">Generating manifest</string>
+    <string name="GeneratingSignatureFile">Generating signature file</string>
+    <string name="GeneratingSignatureBlock">Generating signature block file</string>
+    <string name="CopyingZipEntry">Copying zip entry %1$d of %2$d</string>
+
+    <!-- Error message shown if the input and output filenames are the same -->
+    <string name="InputFileSameAsOutput">Input and output files are the same. Specify a different name for the output.</string>
+    <!-- Error message shown when the key/mode="auto" and the key to use for signing can't be determined.  %s replaced with input filename. -->
+    <string name="AutoKeySelectionError">Unable to auto-select key for signing %s</string>
 
 </resources>

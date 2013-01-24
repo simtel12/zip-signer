@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">ZipSigner 2</string>
 	
-	<string name="InputZipLabel">输入文件 (zip/apk/jar)</string>
+	<string name="InputZipLabel">输入文件 (ZIP/APK/JAR)</string>
 	<string name="InOutPickButtonLabel">选择输入/输出文件</string>	
 	<string name="OpenPickButtonLabel">输入...</string>
 	<string name="SaveAsPickButtonLabel">输出...</string>
@@ -18,15 +18,15 @@
     <string name="KeySelectionMessage">无法自动选择私钥签名 %s</string>
     <string name="FileSigningSuccess">文件签名操作已成功！</string>
     <string name="FileSigningCancelled">文件签名操作已取消！</string>
-    <string name="ExtStorageIsReadOnly">错误：外部存储空间挂载为只读</string>
+    <string name="ExtStorageIsReadOnly">错误：外部存储空间被挂载为只读</string>
     <string name="SigningWithKey">签名私钥：</string>
 	
 	<string name="AboutZipSignerTitle">关于</string>
 	<string name="AboutZipSignerBanner">Zip Signer 2</string>
 	<string name="AboutZipSignerVersionTemplate">版本： %s</string>
 	<string name="AboutZipSignerDescription">签名 ZIP、APK、JAR 文件</string>
-	<string name="AboutZipSignerAuthor">作者： Ken Ellinwood</string>
-	<string name="AboutZipSignerCopyright">Copyright 2010-2013. All rights reserved.</string>
+	<string name="AboutZipSignerAuthor">作者：Ken Ellinwood</string>
+	<string name="AboutZipSignerCopyright">Copyright 2010,2012. All rights reserved.</string>
 	<string name="AboutFmAttribution">文件浏览器源码基于 http://www.anddev.org/android_filebrowser__v20-t101.html</string>
 	<string name="AboutFmIconsAttribution">文件浏览器图标从Tango Icon Gallery 获取，http://tango.freedesktop.org</string>
 	
@@ -55,10 +55,10 @@
     <!-- Manage Keys string values -->
     <string name="MyKeysWebPage">http://sites.google.com/site/zipsigner/signing-with-your-own-keys</string>
     <string name="MenuRegisterKeystore">注册私钥库</string>
-    <string name="RememberThisPassword">记住密码</string>
+    <string name="RememberThisPassword">记住库密码</string>
     <string name="EnterKeystorePassword">输入私钥库密码</string>
     <string name="WrongKeystorePassword">私钥库密码错误</string>
-    <string name="UnregisterMenuItemLabel">未注册私钥库</string>
+    <string name="UnregisterMenuItemLabel">私钥库尚未注册</string>
     <string name="RememberPasswordMenuItemLabel">记住密码</string>
     <string name="ForgetPasswordMenuItemLabel">忘记密码</string>
     <string name="CreateKeyMenuItemLabel">创建私钥</string>
@@ -118,7 +118,7 @@
     <string name="PasswordsDontMatch">密码错误</string>
     <string name="PasswordRequired">需要密码</string>
     <string name="KeyPasswordRequired">需要私钥密码</string>
-    <string name="OverwriteKeystoreTitle">覆盖文件？</string>
+    <string name="OverwriteKeystoreTitle">是否覆盖文件？</string>
     <string name="OverwriteKeystoreFile">%s 已存在，是否覆盖？</string>
 
 
@@ -158,8 +158,8 @@
     <string name="StateLabel">国家/省市</string>
     <string name="LocalityLabel">城市/地区</string>
     <string name="CountryLabel">国家代码</string>
-    <string name="InvalidValidity">无效</string>
-    <string name="InvalidValidityMessage">请填写正数</string>
+    <string name="InvalidValidity">输入无效</string>
+    <string name="InvalidValidityMessage">需填写正数</string>
     <string name="MissingCertInfoTitle">缺少信息</string>
     <string name="MissingCertInfoMessage">请至少填写“您的姓名”区域。</string>
     <string name="ShortCertValidityTitle">有效期警告</string>
@@ -180,6 +180,14 @@
     <string name="CertIsSelfSigned">证书自签名</string>
     <string name="IssuerDN">发行 DN</string>
     <string name="KeystorePasswordRequired">请填写私钥库密码</string>
+
+    <string name="BackButtonLabel">返回</string>
+    <string name="MD5FingerprintLabel">MD5</string>
+    <string name="SHA1FingerprintLabel">SHA1</string>
+    <string name="SHA1KeyHashLabel">SHA1 密钥 Hash</string>
+    <string name="CopyToClipboardMenuItemLabel">复制至剪切板</string>
+    <string name="FingerprintsLabel">指纹</string>
+    <string name="FingerprintCopyInstructions">在指纹项上长按复制其值</string>
 
 
 </resources>

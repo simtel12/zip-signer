@@ -23,7 +23,6 @@ import java.util.Observer;
 
 import kellinwood.security.zipsigner.optional.CustomKeySigner;
 import kellinwood.security.zipsigner.optional.PasswordObfuscator;
-import kellinwood.zipsigner2.R;
 
 import kellinwood.logging.LoggerManager;
 import kellinwood.logging.android.AndroidLogger;
@@ -274,7 +273,7 @@ public class ZipSignerActivity extends Activity {
                 zipSigner = new ZipSigner();
                 zipSigner.addAutoKeyObserver(this);
                 zipSigner.addProgressListener( this);
-
+                zipSigner.setResourceAdapter( new ZipSignerAppResourceAdapter( getResources()));
 
                 if (builtInKey) {
                     zipSigner.setKeymode(keyMode);

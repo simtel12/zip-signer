@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">ZipSigner 2</string>
 	
-	<string name="InputZipLabel">輸入文件 (zip/apk/jar)</string>
+	<string name="InputZipLabel">輸入文件 (ZIP/APK/JAR)</string>
 	<string name="InOutPickButtonLabel">選擇輸入/輸出文件</string>	
 	<string name="OpenPickButtonLabel">輸入...</string>
 	<string name="SaveAsPickButtonLabel">輸出...</string>
@@ -18,15 +18,15 @@
     <string name="KeySelectionMessage">無法自動選擇私鑰簽名 %s</string>
     <string name="FileSigningSuccess">文件簽名操作已成功！</string>
     <string name="FileSigningCancelled">文件簽名操作已取消！</string>
-    <string name="ExtStorageIsReadOnly">錯誤：外部存儲空間挂載爲只讀</string>
+    <string name="ExtStorageIsReadOnly">錯誤：外部存儲空間被挂載爲只讀</string>
     <string name="SigningWithKey">簽名私鑰：</string>
 	
 	<string name="AboutZipSignerTitle">關于</string>
 	<string name="AboutZipSignerBanner">Zip Signer 2</string>
 	<string name="AboutZipSignerVersionTemplate">版本： %s</string>
 	<string name="AboutZipSignerDescription">簽名 ZIP、APK、JAR 文件</string>
-	<string name="AboutZipSignerAuthor">作者： Ken Ellinwood</string>
-	<string name="AboutZipSignerCopyright">Copyright 2010-2013. All rights reserved.</string>
+	<string name="AboutZipSignerAuthor">作者：Ken Ellinwood</string>
+	<string name="AboutZipSignerCopyright">Copyright 2010,2012. All rights reserved.</string>
 	<string name="AboutFmAttribution">文件浏覽器源碼基于 http://www.anddev.org/android_filebrowser__v20-t101.html</string>
 	<string name="AboutFmIconsAttribution">文件浏覽器圖標從Tango Icon Gallery 獲取，http://tango.freedesktop.org</string>
 	
@@ -55,10 +55,10 @@
     <!-- Manage Keys string values -->
     <string name="MyKeysWebPage">http://sites.google.com/site/zipsigner/signing-with-your-own-keys</string>
     <string name="MenuRegisterKeystore">注冊私鑰庫</string>
-    <string name="RememberThisPassword">記住密碼</string>
+    <string name="RememberThisPassword">記住庫密碼</string>
     <string name="EnterKeystorePassword">輸入私鑰庫密碼</string>
     <string name="WrongKeystorePassword">私鑰庫密碼錯誤</string>
-    <string name="UnregisterMenuItemLabel">未注冊私鑰庫</string>
+    <string name="UnregisterMenuItemLabel">私鑰庫尚未注冊</string>
     <string name="RememberPasswordMenuItemLabel">記住密碼</string>
     <string name="ForgetPasswordMenuItemLabel">忘記密碼</string>
     <string name="CreateKeyMenuItemLabel">創建私鑰</string>
@@ -118,7 +118,7 @@
     <string name="PasswordsDontMatch">密碼錯誤</string>
     <string name="PasswordRequired">需要密碼</string>
     <string name="KeyPasswordRequired">需要私鑰密碼</string>
-    <string name="OverwriteKeystoreTitle">覆蓋文件？</string>
+    <string name="OverwriteKeystoreTitle">是否覆蓋文件？</string>
     <string name="OverwriteKeystoreFile">%s 已存在，是否覆蓋？</string>
 
 
@@ -158,8 +158,8 @@
     <string name="StateLabel">國家/省市</string>
     <string name="LocalityLabel">城市/地區</string>
     <string name="CountryLabel">國家代碼</string>
-    <string name="InvalidValidity">無效</string>
-    <string name="InvalidValidityMessage">請填寫正數</string>
+    <string name="InvalidValidity">輸入無效</string>
+    <string name="InvalidValidityMessage">需填寫正數</string>
     <string name="MissingCertInfoTitle">缺少信息</string>
     <string name="MissingCertInfoMessage">請至少填寫“您的姓名”區域。</string>
     <string name="ShortCertValidityTitle">有效期警告</string>
@@ -172,14 +172,22 @@
     <string name="SuccessMessage">成功</string>
 
     <string name="ConfirmDeleteKeyTitle">是否刪除 %s？</string>
-    <string name="ConfirmDeleteKeyMessage">此操作将从私钥库文件中永久删除私钥 %s，是否继续？</string>
+    <string name="ConfirmDeleteKeyMessage">此操作將從私鑰庫文件中永久刪除私鑰 %s，是否繼續？</string>
     <string name="NameConflictTitle">私鑰名稱沖突</string>
-    <string name="NameConflictMessage">输入名称 %s 在私钥库中已存在</string>
+    <string name="NameConflictMessage">輸入名稱 %s 在私鑰庫中已存在</string>
     <string name="ExpiresLabel">到期</string>
-    <string name="SubjectDN">主题 DN</string>
-    <string name="CertIsSelfSigned">证书自签名</string>
-    <string name="IssuerDN">发行 DN</string>
-    <string name="KeystorePasswordRequired">請填寫私钥库密码</string>
+    <string name="SubjectDN">主題 DN</string>
+    <string name="CertIsSelfSigned">證書自簽名</string>
+    <string name="IssuerDN">發行 DN</string>
+    <string name="KeystorePasswordRequired">請填寫私鑰庫密碼</string>
+
+    <string name="BackButtonLabel">返回</string>
+    <string name="MD5FingerprintLabel">MD5</string>
+    <string name="SHA1FingerprintLabel">SHA1</string>
+    <string name="SHA1KeyHashLabel">SHA1 密鑰 Hash</string>
+    <string name="CopyToClipboardMenuItemLabel">複制至剪切板</string>
+    <string name="FingerprintsLabel">指紋</string>
+    <string name="FingerprintCopyInstructions">在指紋項上長按複制其值</string>
 
 
 </resources>
