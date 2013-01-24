@@ -84,9 +84,9 @@ ZipSigner can sign with the four Google keys: "media", "platform",
 and "auto-testkey". In auto mode, ZipSigner examines the signature
 block of the input file and automatically determines which key should
 be used to sign the file such that the output is signed with the same
-key as the input file.  In "auto" mode the signing operation will fail
+key as the input file.  The signing operation will fail in "auto" mode
 if it can't determine which of the four keys to use.  The mode
-"auto-testkey" is similar except ZipSigner falls back to the testkey
+"auto-testkey" is similar except ZipSigner falls back to "testkey"
 if it cant automatically determine which key to use.  Specifying one
 of the keys directly as the key/mode will force the output to be
 signed with the specified key, regardless of which key the intput file
@@ -109,6 +109,14 @@ zipSigner.addProgressListener( new ProgressListener() {
    }
 });
 zipSigner.signZip( inputFile, outputFile);
+
+INTERNATIONALIZING ERROR AND PROGRESS MESSAGES
+
+To get internationalized error and progress messages, implement kellinwood.security.zipsigner.ResourceAdapter
+and pass your adapter instance to zipSigner.setResourceAdapter().
+
+A working adapter example can be seen here:
+https://zip-signer.googlecode.com/svn/ZipSigner/trunk/src/kellinwood/zipsigner2/ZipSignerAppResourceAdapter.java
 
 
 ENABLING LOG OUTPUT:
@@ -175,7 +183,7 @@ OR
     /** KeyStore-type agnostic.  This method will sign the zip file, automatically 
         handling JKS or BKS keystores, even on Android. 
     */
-    kellinwood.security.zipsigner.optional.signZip( ZipSigner zipSigner,
+    kellinwood.security.zipsigner.optional.CustomKeySigner.signZip( ZipSigner zipSigner,
                          String keystorePath,
                          char[] keystorePw,
                          String certAlias,

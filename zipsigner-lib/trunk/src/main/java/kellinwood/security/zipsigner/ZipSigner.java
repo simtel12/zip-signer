@@ -67,6 +67,7 @@ public class ZipSigner
     private boolean canceled = false;
 
     private ProgressHelper progressHelper = new ProgressHelper();
+    private ResourceAdapter resourceAdapter = new DefaultResourceAdapter();
     
     static LoggerInterface log = null;
 
@@ -111,7 +112,15 @@ public class ZipSigner
         autoKeyDetect.put( "dab2cead827ef5313f28e22b6fa8479f", "testkey");
         
     }
-    
+
+    public ResourceAdapter getResourceAdapter() {
+        return resourceAdapter;
+    }
+
+    public void setResourceAdapter(ResourceAdapter resourceAdapter) {
+        this.resourceAdapter = resourceAdapter;
+    }
+
     // when the key mode is automatic, the observers are called when the key is determined
     public void addAutoKeyObserver( Observer o) {
         autoKeyObservable.addObserver(o);
@@ -198,7 +207,11 @@ public class ZipSigner
         
         return null;
     }
-    
+
+    public void issueLoadingCertAndKeysProgressEvent() {
+        progressHelper.progress(ProgressEvent.PRORITY_IMPORTANT, resourceAdapter.getString(ResourceAdapter.Item.LOADING_CERTIFICATE_AND_KEY));
+    }
+
     // Loads one of the built-in keys (media, platform, shared, testkey)
     public void loadKeys( String name)
         throws IOException, GeneralSecurityException
@@ -212,9 +225,9 @@ public class ZipSigner
         loadedKeys.put( name, keySet);
         
         if (KEY_NONE.equals(name)) return;
-        
-        progressHelper.progress(ProgressEvent.PRORITY_IMPORTANT, "Loading certificate and private key");
-        
+
+        issueLoadingCertAndKeysProgressEvent();
+
         // load the private key
         URL privateKeyUrl = getClass().getResource("/keys/"+name+".pk8");
         keySet.setPrivateKey(readPrivateKey(privateKeyUrl, null));
@@ -402,7 +415,7 @@ public class ZipSigner
                      !stripPattern.matcher(name).matches()))
             {
 
-                progressHelper.progress( ProgressEvent.PRORITY_NORMAL, "Generating manifest");
+                progressHelper.progress( ProgressEvent.PRORITY_NORMAL, resourceAdapter.getString(ResourceAdapter.Item.GENERATING_MANIFEST));
                 InputStream data = entry.getInputStream();
                 while ((num = data.read(buffer)) > 0) {
                     md.update(buffer, 0, num);
@@ -445,7 +458,7 @@ public class ZipSigner
         Map<String, Attributes> entries = manifest.getEntries();
         for (Map.Entry<String, Attributes> entry : entries.entrySet()) {
             if (canceled) break;
-            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, "Generating signature file");
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, resourceAdapter.getString(ResourceAdapter.Item.GENERATING_SIGNATURE_FILE));
             // Digest of the manifest stanza for this entry.
             String nameEntry = "Name: " + entry.getKey() + "\r\n"; 
             print.print( nameEntry);
@@ -524,7 +537,7 @@ public class ZipSigner
         int i = 1;
         for (String name : names) {
             if (canceled) break;
-            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, String.format("Copying zip entry %d of %d", i, names.size()));
+            progressHelper.progress(ProgressEvent.PRORITY_NORMAL, resourceAdapter.getString(ResourceAdapter.Item.COPYING_ZIP_ENTRY, i, names.size()));
             i += 1;
             ZioEntry inEntry = input.get(name);
             inEntry.setTime(timestamp);
@@ -542,7 +555,7 @@ public class ZipSigner
         int i = 1;
         for (ZioEntry inEntry : input.values()) {
             if (canceled) break;
-            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, String.format("Copying zip entry %d of %d", i, input.size()));
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, resourceAdapter.getString(ResourceAdapter.Item.COPYING_ZIP_ENTRY, i, input.size()));
             i += 1;
             output.write(inEntry);
         }
@@ -625,11 +638,11 @@ public class ZipSigner
         File outFile = new File( outputZipFilename).getCanonicalFile();
         
         if (inFile.equals(outFile)) {
-            throw new IllegalArgumentException("Input and output files are the same.  Specify a different name for the output.");
+            throw new IllegalArgumentException( resourceAdapter.getString(ResourceAdapter.Item.INPUT_SAME_AS_OUTPUT_ERROR));
         }        
 
         progressHelper.initProgress();        
-        progressHelper.progress( ProgressEvent.PRORITY_IMPORTANT, "Parsing the input's central directory");
+        progressHelper.progress( ProgressEvent.PRORITY_IMPORTANT, resourceAdapter.getString(ResourceAdapter.Item.PARSING_CENTRAL_DIRECTORY));
         
         ZipInput input = ZipInput.read( inputZipFilename);
         signZip( input.getEntries(), new FileOutputStream( outputZipFilename), outputZipFilename);
@@ -653,7 +666,7 @@ public class ZipSigner
             // Auto-determine which keys to use
             String keyName = this.autoDetectKey( keymode, zioEntries);
             if (keyName == null) 
-                throw new AutoKeyException("Unable to auto-select key for signing " + new File( outputZipFilename).getName());
+                throw new AutoKeyException( resourceAdapter.getString(ResourceAdapter.Item.AUTO_KEY_SELECTION_ERROR, new File( outputZipFilename).getName()));
             
             autoKeyObservable.notifyObservers(keyName);
 
@@ -722,7 +735,7 @@ public class ZipSigner
             zipOutput.write(ze);
 
             // CERT.RSA
-            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, "Generating signature block file");
+            progressHelper.progress( ProgressEvent.PRORITY_NORMAL, resourceAdapter.getString(ResourceAdapter.Item.GENERATING_SIGNATURE_BLOCK));
             ze = new ZioEntry(CERT_RSA_NAME);
             ze.setTime(timestamp);
             writeSignatureBlock(keySet, sfBytes, ze.getOutputStream());
