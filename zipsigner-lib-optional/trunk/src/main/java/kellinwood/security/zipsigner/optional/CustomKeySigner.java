@@ -23,6 +23,7 @@ public class CustomKeySigner {
                          String outputZipFilename)
         throws Exception
     {
+        zipSigner.issueLoadingCertAndKeysProgressEvent();
         KeyStore keystore = KeyStoreFileManager.loadKeyStore( keystorePath, keystorePw);
         Certificate cert = keystore.getCertificate(certAlias);
         X509Certificate publicKey = (X509Certificate)cert;
