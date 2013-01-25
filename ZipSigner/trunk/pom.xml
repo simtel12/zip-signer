@@ -3,14 +3,14 @@
 
     <groupId>kellinwood.android</groupId>
     <artifactId>ZipSigner</artifactId>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.2</version>
     <packaging>apk</packaging>
 
     <name>ZipSigner</name>
     <url>http://code.google.com/p/zip-signer/</url>
 
     <scm>
-        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/ZipSigner/trunk</developerConnection>
+        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/ZipSigner/tags/ZipSigner-3.2</developerConnection>
     </scm>
     <distributionManagement>
         <repository>
