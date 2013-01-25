@@ -9,10 +9,10 @@
 	<string name="SignedZipLabel">簽名輸出文件</string>	
 	<string name="KeyModeLabel">私鑰/模式：</string>
     <string name="SignatureAlgorithmLabel">簽名算法</string>
-	<string name="SignButtonLabel">簽名文件</string>
+	<string name="SignButtonLabel">簽名選擇文件</string>
     <string name="BrowserSelectInput">選擇輸入文件</string>
     <string name="BrowserSelectOutput">選擇輸出文件</string>
-    <string name="BrowserDirectoryModeTitle">浏覽目錄</string>
+    <string name="BrowserDirectoryModeTitle">瀏覽目錄</string>
     <string name="BrowserDirectoryModeMessage">長按項目選擇目標目錄</string>
     <string name="KeySelectionError">選擇私鑰錯誤</string>
     <string name="KeySelectionMessage">無法自動選擇私鑰簽名 %s</string>
@@ -21,14 +21,14 @@
     <string name="ExtStorageIsReadOnly">錯誤：外部存儲空間被挂載爲只讀</string>
     <string name="SigningWithKey">簽名私鑰：</string>
 	
-	<string name="AboutZipSignerTitle">關于</string>
+	<string name="AboutZipSignerTitle">關於</string>
 	<string name="AboutZipSignerBanner">Zip Signer 2</string>
 	<string name="AboutZipSignerVersionTemplate">版本： %s</string>
 	<string name="AboutZipSignerDescription">簽名 ZIP、APK、JAR 文件</string>
 	<string name="AboutZipSignerAuthor">作者：Ken Ellinwood</string>
-	<string name="AboutZipSignerCopyright">Copyright 2010,2012. All rights reserved.</string>
-	<string name="AboutFmAttribution">文件浏覽器源碼基于 http://www.anddev.org/android_filebrowser__v20-t101.html</string>
-	<string name="AboutFmIconsAttribution">文件浏覽器圖標從Tango Icon Gallery 獲取，http://tango.freedesktop.org</string>
+	<string name="AboutZipSignerCopyright">Copyright 2010-2013. All rights reserved.</string>
+	<string name="AboutFmAttribution">文件瀏覽器源碼基於 http://www.anddev.org/android_filebrowser__v20-t101.html</string>
+	<string name="AboutFmIconsAttribution">文件瀏覽器圖標從 Tango Icon Gallery 獲取，http://tango.freedesktop.org</string>
 	
 	<string name="AboutZipSignerDocumentation">訪問頁面</string>
 	<string name="AboutZipSignerDocUrlPattern">頁面</string>
@@ -47,10 +47,10 @@
     <string name="current_dir">.</string>	
     
     <!--  menu string values -->
-    <string name="MenuWebSite">站點</string>
+    <string name="MenuWebSite">作者站點</string>
     <string name="MenuManageKeys">我的私鑰</string>
     <string name="MenuDonate">捐贈</string>
-    <string name="MenuAbout">關于</string>
+    <string name="MenuAbout">關於</string>
     
     <!-- Manage Keys string values -->
     <string name="MyKeysWebPage">http://sites.google.com/site/zipsigner/signing-with-your-own-keys</string>
@@ -78,7 +78,7 @@
     <string name="NewKeystoreIntroTitle">新建私鑰庫以及私鑰</string>
     <string name="NewKeystoreIntroP1">
         以下步驟將引導您通過新建私鑰庫、私有密鑰、自簽名證書可
-        被用于簽名應用在 Google Play 上發布。要在已有私鑰庫中新
+        被用於簽名應用在 Google Play 上發布。要在已有私鑰庫中新
         建私鑰請返回上一步並長按私鑰庫項目，選擇“創建私鑰”選項。
         </string>
     <string name="NewKeystoreIntroP2">
@@ -189,5 +189,17 @@
     <string name="FingerprintsLabel">指紋</string>
     <string name="FingerprintCopyInstructions">在指紋項上長按複制其值</string>
 
+    <!-- Progress messages -->
+    <string name="LoadingCertificateAnKey">正在載入證書以及私鑰</string>
+    <string name="ParsingCentralDirectory">正在解析文件核心目錄</string>
+    <string name="GeneratingManifest">正在生成文件目錄清單</string>
+    <string name="GeneratingSignatureFile">正在生成目標文件簽名</string>
+    <string name="GeneratingSignatureBlock">正在生成簽名模塊文件</string>
+    <string name="CopyingZipEntry">正在從 %1$d 複制文件至 %2$d 文件</string>
+
+    <!-- Error message shown if the input and output filenames are the same -->
+    <string name="InputFileSameAsOutput">輸入以及輸出文件同名，請給輸出文件指定一個不同的文件名稱。</string>
+    <!-- Error message shown when the key/mode="auto" and the key to use for signing can't be determined.  %s replaced with input filename. -->
+    <string name="AutoKeySelectionError">無法自動選擇密鑰簽名 %s</string>
 
 </resources>
