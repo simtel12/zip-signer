@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ZipSigner 2</string>
+    <string name="app_name">ZipSigner</string>
 	
 	<string name="InputZipLabel">Input File (zip/apk/jar)</string>
 	<string name="InOutPickButtonLabel">Choose In/Out…</string>
