@@ -49,7 +49,9 @@ public class ProgressHelper {
 
         progressCurrentItem += 1;
 
-        int percentDone = (100 * progressCurrentItem) / progressTotalItems;
+        int percentDone;
+        if (progressTotalItems == 0) percentDone = 0;
+        else percentDone = (100 * progressCurrentItem) / progressTotalItems;
 
         // Notify listeners here
         for (ProgressListener listener : listeners) {
