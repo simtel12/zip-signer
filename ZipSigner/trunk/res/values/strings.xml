@@ -22,7 +22,7 @@
     <string name="SigningWithKey">Signing with key:</string>
 	
 	<string name="AboutZipSignerTitle">About</string>
-	<string name="AboutZipSignerBanner">Zip Signer 2</string>
+	<string name="AboutZipSignerBanner">Zip Signer</string>
 	<string name="AboutZipSignerVersionTemplate">Version: %s</string>
 	<string name="AboutZipSignerDescription">Signs zip, apk, and/or jar files.</string>
 	<string name="AboutZipSignerAuthor">Author: Ken Ellinwood</string>

@@ -22,7 +22,7 @@
     <string name="SigningWithKey">签名私钥：</string>
 	
 	<string name="AboutZipSignerTitle">关于</string>
-	<string name="AboutZipSignerBanner">Zip Signer 2</string>
+	<string name="AboutZipSignerBanner">Zip Signer</string>
 	<string name="AboutZipSignerVersionTemplate">版本： %s</string>
 	<string name="AboutZipSignerDescription">签名 ZIP、APK、JAR 文件</string>
 	<string name="AboutZipSignerAuthor">作者：Ken Ellinwood</string>
