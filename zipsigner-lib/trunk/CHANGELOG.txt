@@ -1,3 +1,5 @@
+1.17 - Remove the dependencies on the SpongyCastle jars when not using zipsigner-lib-optional.
+
 1.16 - Fix a divide-by-zero error that occurred when signing with zipsigner-lib-optional/CustomKeySigner.
 
 1.15 - Added the ResourceAdapter interface for internationalizing error and progress messages.  See the README file
