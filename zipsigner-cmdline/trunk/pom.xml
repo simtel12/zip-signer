@@ -35,7 +35,7 @@
         <dependency>
             <groupId>kellinwood.android</groupId>
             <artifactId>kellinwood-logging-lib</artifactId>
-            <version>1.0</version>
+            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>kellinwood.android</groupId>
@@ -44,13 +44,8 @@
         </dependency>
         <dependency>
             <groupId>kellinwood.android</groupId>
-            <artifactId>zipsigner-lib</artifactId>
-            <version>1.12</version>
-        </dependency>
-        <dependency>
-            <groupId>kellinwood.android</groupId>
-            <artifactId>android-sun-jarsign-support</artifactId>
-            <version>1.1</version>
+            <artifactId>zipsigner-lib-optional</artifactId>
+            <version>1.16</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -106,15 +101,20 @@
 
                 <configuration>
                     <executable>java</executable>
+                    <mainClass>kellinwood.zipsigner.cmdline.Main</mainClass>
                     <arguments>
-                        <argument>-classpath</argument>
-                        <!-- automatically creates the classpath using all project dependencies,
-                             also adding the project build directory -->
-                        <classpath />
-                        <argument>kellinwood.zipsigner.cmdline.Main</argument>
-                        <argument>${inputFile}</argument>
-                        <argument>${outputFile}</argument>
+                        <argument>--secprovider</argument><argument>org.spongycastle.jce.provider.BouncyCastleProvider</argument>
+                        <argument>--keystore</argument><argument>keystore.jks</argument>
+                        <argument>--storepass</argument><argument>test123</argument>
+                        <argument>--keypass</argument><argument>test123</argument>
+                        <argument>../ZipSigner/target/ZipSigner.apk</argument>
+                        <argument>ZipSigner-signed.apk</argument>
                     </arguments>
+
+                    <!--<mainClass>kellinwood.zipsigner.cmdline.Test</mainClass>-->
+                    <!--<arguments>-->
+                        <!--<argument>CERT.RSA</argument>-->
+                    <!--</arguments>-->
                 </configuration>
             </plugin>
         </plugins>
