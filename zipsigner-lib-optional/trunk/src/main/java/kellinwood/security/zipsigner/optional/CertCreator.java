@@ -18,7 +18,7 @@ import java.util.Date;
 public class CertCreator {
 
     /** Creates a new keystore and self-signed key.  The key will have the same password as the key, and will be
-     *  RSA 2048, with the cert signed using SHA256withRSA.  The certificate will have a validity of
+     *  RSA 2048, with the cert signed using SHA1withRSA.  The certificate will have a validity of
      *  30 years).
      *
      * @param storePath - pathname of the new keystore file
@@ -29,7 +29,7 @@ public class CertCreator {
     public static void createKeystoreAndKey( String storePath, char[] password,
                                       String keyName, DistinguishedNameValues distinguishedNameValues)
     {
-        createKeystoreAndKey(storePath, password, "RSA", 2048, keyName, password, "SHA256withRSA", 30,
+        createKeystoreAndKey(storePath, password, "RSA", 2048, keyName, password, "SHA1withRSA", 30,
             distinguishedNameValues);
     }
 

@@ -4,7 +4,6 @@ package kellinwood.security.zipsigner.optional;
 import kellinwood.logging.LoggerInterface;
 import kellinwood.logging.LoggerManager;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.jce.provider.JDKKeyStore;
 
 import java.io.*;
 import java.security.*;
@@ -16,16 +15,22 @@ import java.security.cert.Certificate;
  */
 public class KeyStoreFileManager {
 
-    static Provider bcProvider = new BouncyCastleProvider();
+    static Provider provider = new BouncyCastleProvider();
 
-    static Provider getBcProvider() { return bcProvider; }
+    public static Provider getProvider() { return provider; }
+
+    public static void setProvider(Provider provider) {
+        if (KeyStoreFileManager.provider != null) Security.removeProvider( KeyStoreFileManager.provider.getName());
+        KeyStoreFileManager.provider = provider;
+        Security.addProvider( provider);
+    }
 
     static LoggerInterface logger = LoggerManager.getLogger( KeyStoreFileManager.class.getName());
 
     static {
         // Add the spongycastle version of the BC provider so that the implementation classes returned
         // from the keystore are all from the spongycastle libs.
-        Security.addProvider(getBcProvider());
+        Security.addProvider(getProvider());
     }
 
 
@@ -66,12 +71,16 @@ public class KeyStoreFileManager {
             fis.close();
             return ks;
         } catch (Exception x) {
-            logger.warning( x.getMessage(), x);
-            ks = KeyStore.getInstance("bks", getBcProvider());
-            FileInputStream fis = new FileInputStream( keystorePath);
-            ks.load( fis, password);
-            fis.close();
-            return ks;
+            // logger.warning( x.getMessage(), x);
+            try {
+                ks = KeyStore.getInstance("bks", getProvider());
+                FileInputStream fis = new FileInputStream( keystorePath);
+                ks.load( fis, password);
+                fis.close();
+                return ks;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load keystore: " + e.getMessage(), e);
+            }
         }
     }
 
