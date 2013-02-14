@@ -4,10 +4,10 @@
 
     <groupId>kellinwood.android</groupId>
     <artifactId>zipsigner-lib-optional</artifactId>
-    <version>1.16-SNAPSHOT</version>
+    <version>1.16</version>
 
     <scm>
-        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/zipsigner-lib-optional/trunk</developerConnection>
+        <developerConnection>scm:svn:https://zip-signer.googlecode.com/svn/zipsigner-lib-optional/tags/zipsigner-lib-optional-1.16</developerConnection>
     </scm>
     <distributionManagement>
         <repository>
