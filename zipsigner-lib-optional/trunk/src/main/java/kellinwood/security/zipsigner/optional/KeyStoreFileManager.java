@@ -70,6 +70,10 @@ public class KeyStoreFileManager {
             ks.load( fis, password);
             fis.close();
             return ks;
+        } catch (LoadKeystoreException x) {
+            // This type of exception is thrown when the keystore is a JKS keystore, but the file is malformed
+            // or the validity/password check failed.  In this case don't bother to attempt loading it as a BKS keystore.
+            throw x;
         } catch (Exception x) {
             // logger.warning( x.getMessage(), x);
             try {

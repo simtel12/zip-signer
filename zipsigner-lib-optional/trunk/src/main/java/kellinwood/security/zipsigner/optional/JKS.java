@@ -147,6 +147,7 @@ import javax.crypto.spec.SecretKeySpec;
  * ** Fixed a NullPointerException in engineLoad(). This method must return gracefully if the keystore input stream is null.
  * ** engineGetCertificateEntry() was updated to return the first cert in the chain for private key entries.
  * ** Lowercase the alias names, otherwise keytool chokes on the file created by this code.
+ * ** Fixed the integrity check in engineLoad(), previously the exception was never thrown regardless of password value.
  */
 public class JKS extends KeyStoreSpi
 {
@@ -397,7 +398,7 @@ public class JKS extends KeyStoreSpi
         final int n = din.readInt();
         aliases.ensureCapacity(n);
         if (n < 0)
-            throw new IOException("negative entry count");
+            throw new LoadKeystoreException("Malformed key store");
         for (int i = 0; i < n; i++)
         {
             int type = din.readInt();
@@ -423,14 +424,18 @@ public class JKS extends KeyStoreSpi
                     break;
 
                 default:
-                    throw new IOException("malformed key store");
+                    throw new LoadKeystoreException("Malformed key store");
             }
         }
 
-        byte[] hash = new byte[20];
-        din.read(hash);
-        if (passwd != null && MessageDigest.isEqual(hash, md.digest()))
-            throw new IOException("signature not verified");
+        if (passwd != null) {
+            byte[] computedHash = md.digest();
+            byte[] storedHash = new byte[20];
+            din.read(storedHash);
+            if (!MessageDigest.isEqual(storedHash, computedHash)) {
+                throw new LoadKeystoreException("Incorrect password, or integrity check failed.");
+            }
+        }
     }
 
     // Own methods.
