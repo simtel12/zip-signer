@@ -15,9 +15,9 @@
  */
 package kellinwood.logging;
 
-public class ConsoleLoggerFactory implements LoggerFactory {
+public class DeaultLoggerFactory implements LoggerFactory {
 
-	public LoggerInterface getLogger(String category) {
-		return new StreamLogger( category, System.out);
+	public Logger getLogger(String category) {
+		return new DefaultLogger(category);
 	}
 }

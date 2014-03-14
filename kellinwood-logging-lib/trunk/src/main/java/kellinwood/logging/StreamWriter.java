@@ -15,26 +15,21 @@
  */
 package kellinwood.logging;
 
-import java.util.Map;
-import java.util.TreeMap;
+import java.io.PrintStream;
 
-public class LoggerManager {
+public class StreamWriter extends AbstractLogWriter {
 
-	static LoggerFactory factory = new NullLoggerFactory();
-	
-	static Map<String,LoggerInterface> loggers = new TreeMap<String,LoggerInterface>();
-	
-	public static void setLoggerFactory( LoggerFactory f) {
-		factory = f;
+
+    private final PrintStream stream;
+
+    public StreamWriter(PrintStream stream)
+	{
+        this.stream = stream;
 	}
-	
-	public static LoggerInterface getLogger(String category) {
-		
-		LoggerInterface logger = loggers.get( category);
-		if (logger == null) {
-			logger = factory.getLogger(category);
-			loggers.put( category, logger);
-		}
-		return logger;
-	}
+
+    @Override
+    public void writeImpl(String level, String category, String message, Throwable t) {
+        stream.println( format(level, category, message));
+        if (t != null) t.printStackTrace(stream);
+    }
 }

@@ -17,7 +17,7 @@ package kellinwood.logging;
 
 public class NullLoggerFactory implements LoggerFactory {
 
-	static LoggerInterface logger = new LoggerInterface() {
+	static Logger logger = new Logger() {
 
 		public void debug(String message) {
 		}
@@ -49,20 +49,20 @@ public class NullLoggerFactory implements LoggerFactory {
 			return false;
 		}
 
-		public boolean isWarningEnabled() {
+		public boolean isWarnEnabled() {
 			return false;
 		}
 
-		public void warning(String message) {
+		public void warn(String message) {
 		}
 
-		public void warning(String message, Throwable t) {
+		public void warn(String message, Throwable t) {
 		}
 		
 	};
 	
 
-	public LoggerInterface getLogger(String category) {
+	public Logger getLogger(String category) {
 		return logger;
 	}
 
