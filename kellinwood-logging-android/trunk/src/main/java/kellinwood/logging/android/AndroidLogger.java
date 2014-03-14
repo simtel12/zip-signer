@@ -1,27 +1,14 @@
-/*
- * Copyright (C) 2010 Ken Ellinwood.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package kellinwood.logging.android;
 
-import kellinwood.logging.AbstractLogger;
 import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
+import kellinwood.logging.DefaultLogger;
+import kellinwood.logging.LogManager;
+
 
 // enable output via 'adb shell setprop log.tag.<YOUR TAG> <LEVEL>'
-public class AndroidLogger extends AbstractLogger 
+public class AndroidLogger extends DefaultLogger
 {
 
 	// Constructs the logger so that only the last component of the class name is used for the logging tag.
@@ -36,7 +23,7 @@ public class AndroidLogger extends AbstractLogger
 	Context toastContext;
 	
 	boolean isErrorToastEnabled = true;
-	boolean isWarningToastEnabled = true;
+	boolean isWarnToastEnabled = true;
 	boolean isInfoToastEnabled = false;
 	boolean isDebugToastEnabled = false;
 
@@ -56,12 +43,12 @@ public class AndroidLogger extends AbstractLogger
 		this.isErrorToastEnabled = isErrorToastEnabled;
 	}
 
-	public boolean isWarningToastEnabled() {
-		return isWarningToastEnabled;
+	public boolean isWarnToastEnabled() {
+		return isWarnToastEnabled;
 	}
 
-	public void setWarningToastEnabled(boolean isWarningToastEnabled) {
-		this.isWarningToastEnabled = isWarningToastEnabled;
+	public void setWarnToastEnabled(boolean isWarnToastEnabled) {
+		this.isWarnToastEnabled = isWarnToastEnabled;
 	}
 
 	public boolean isInfoToastEnabled() {
@@ -84,23 +71,23 @@ public class AndroidLogger extends AbstractLogger
 	public void errorLO(String message, Throwable t) {
         boolean toastState = isErrorToastEnabled;
         isErrorToastEnabled = false;
-		writeFixNullMessage( ERROR, message, t);
+		error( message, t);
         isErrorToastEnabled = toastState;
 	}
 
-    // warning, log only (no toast)
-	public void warningLO(String message, Throwable t) {
-        boolean toastState = isWarningToastEnabled;
-        isWarningToastEnabled = false;
-        writeFixNullMessage( WARNING, message, t);
-        isWarningToastEnabled = toastState;
+    // warn, log only (no toast)
+	public void warnLO(String message, Throwable t) {
+        boolean toastState = isWarnToastEnabled;
+        isWarnToastEnabled = false;
+        warn(message,t);
+        isWarnToastEnabled = toastState;
 	}
     
     // info, log only (no toast)
 	public void infoLO(String message, Throwable t) {
         boolean toastState = isInfoToastEnabled;
         isInfoToastEnabled = false;
-        writeFixNullMessage( INFO, message, t);
+        info(message,t);
         isInfoToastEnabled = toastState;
 	}
     
@@ -108,7 +95,7 @@ public class AndroidLogger extends AbstractLogger
 	public void debugLO(String message, Throwable t) {
         boolean toastState = isDebugToastEnabled;
         isDebugToastEnabled = false;
-        writeFixNullMessage( DEBUG, message, t);
+        debug(message,t);
         isDebugToastEnabled = toastState;
 	}
 
@@ -118,53 +105,46 @@ public class AndroidLogger extends AbstractLogger
             if (toastContext != null) Toast.makeText(toastContext, message, Toast.LENGTH_LONG).show();
         }
         catch (Throwable t) {
-            Log.e(category, message, t);
+            Log.e(getCategory(), message, t);
         }
     }
-    
+
+    String formatMessage( String message) {
+        if (LogManager.isCategoryOverridden()) {
+            return category + "- " + message;
+        } else {
+            return message;
+        }
+    }
+
 	@Override
-	public void write(String level, String message, Throwable t) {
-		if (ERROR.equals(level)) {
-			if (t != null) Log.e(category, message, t);
-			else Log.e( category, message);
-			if (isErrorToastEnabled) toast( message);
-		}
-		else if (DEBUG.equals(level)) { 
-			if (t != null) Log.d(category, message, t);
-			else Log.d( category, message);
-			if (isDebugToastEnabled) toast(message);
-		}		
-		else if (WARNING.equals(level)) { 
-			if (t != null) Log.w(category, message, t);
-			else Log.w( category, message);
-			if (isWarningToastEnabled) toast(message);
-		}
-		else if (INFO.equals(level)) { 
-			if (t != null) Log.i(category, message, t);
-			else Log.i( category, message);
-			if (isInfoToastEnabled) toast( message);
-		}
+	protected void write(String level, String category, String message, Throwable t) {
+        super.write(level, category, formatMessage(message), t);
+		if (ERROR.equals(level) && isErrorToastEnabled) toast( message);
+        else if (DEBUG.equals(level) && isDebugToastEnabled) toast(message);
+		else if (WARN.equals(level) && isWarnToastEnabled) toast(message);
+		else if (INFO.equals(level) && isInfoToastEnabled) toast( message);
 	}
 
 	@Override
 	public boolean isDebugEnabled() {
-		boolean enabled = Log.isLoggable(category, Log.DEBUG);
+		boolean enabled = Log.isLoggable(getCategory(), Log.DEBUG);
 		return enabled;
 	}
 
 	@Override
 	public boolean isErrorEnabled() {
-		return Log.isLoggable(category, Log.ERROR);
+		return Log.isLoggable(getCategory(), Log.ERROR);
 	}
 
 	@Override
 	public boolean isInfoEnabled() {
-		return Log.isLoggable(category, Log.INFO);
+		return Log.isLoggable(getCategory(), Log.INFO);
 	}
 
 	@Override
-	public boolean isWarningEnabled() {
-		return Log.isLoggable(category, Log.WARN);
+	public boolean isWarnEnabled() {
+		return Log.isLoggable(getCategory(), Log.WARN);
 	}
 
 	
