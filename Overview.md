@@ -1,0 +1,1 @@
+Moved to the [project homepage](http://code.google.com/p/zip-signer).

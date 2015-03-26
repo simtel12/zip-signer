@@ -1,0 +1,1 @@
+Moved to [http://sites.google.com/site/zipsigner](http://sites.google.com/site/zipsigner) since Google no longer allows http://code.google.com/p/zip-signer/wiki/ZipSigner to be used as the app's website in the Market.
