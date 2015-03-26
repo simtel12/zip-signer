@@ -16,5 +16,6 @@
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="jdk" jdkName="1.7" jdkType="JavaSDK" />
+    <orderEntry type="library" name="kellinwood-logging-lib-1.1" level="project" />
   </component>
 </module>
