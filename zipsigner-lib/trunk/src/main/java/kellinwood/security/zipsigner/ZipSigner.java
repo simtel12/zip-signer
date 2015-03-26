@@ -643,8 +643,17 @@ public class ZipSigner
         progressHelper.initProgress();        
         progressHelper.progress( ProgressEvent.PRORITY_IMPORTANT, resourceAdapter.getString(ResourceAdapter.Item.PARSING_CENTRAL_DIRECTORY));
         
-        ZipInput input = ZipInput.read( inputZipFilename);
-        signZip( input.getEntries(), new FileOutputStream( outputZipFilename), outputZipFilename);
+        ZipInput input = null;
+        OutputStream outStream = null;
+        try {
+            input = ZipInput.read( inputZipFilename);
+            outStream = new FileOutputStream( outputZipFilename);
+            signZip(input.getEntries(), outStream, outputZipFilename);
+        }
+        finally {
+            if(input != null) input.close();
+            if(outStream != null) outStream.close();
+        }
     }
     
     /** Sign the 
@@ -747,7 +756,7 @@ public class ZipSigner
             
         }
         finally {
-            zipOutput.close();
+            if (zipOutput != null) zipOutput.close();
             if (canceled) {
                 try {
                     if (outputZipFilename != null) new File( outputZipFilename).delete();
